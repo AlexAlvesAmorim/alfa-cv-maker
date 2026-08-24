@@ -1,4 +1,5 @@
 import type { ChatStep } from '../types';
+import { TEMPLATES } from './templates';
 
 export const WELCOME_MESSAGE =
   'Bem-vindo ao Alfa Curriculum Maker! Eu sou o assistente que vai montar o seu currículo. '
@@ -15,7 +16,7 @@ export const STEPS: ChatStep[] = [
   {
     id: 'layout',
     question:
-      'Escolha o modelo do seu currículo — são 7, cada um com um objetivo:\n\n'
+      'Escolha o modelo do seu currículo — são 7, cada um com um objetivo. Toque em um card para ver e escolher:\n\n'
       + '• Clássico: Curriculum Vitae tradicional para áreas formais\n'
       + '• ATS: padrão para robôs de triagem de RH\n'
       + '• XYZ: padrão Google, conquistas medidas\n'
@@ -23,16 +24,8 @@ export const STEPS: ChatStep[] = [
       + '• Executivo: faixa escura com foto, visual sênior\n'
       + '• Clean: elegante, serif com foto\n'
       + '• Minimal: duas colunas sóbrias',
-    placeholder: 'Escolha um modelo abaixo...',
-    suggestions: [
-      'Clássico (Curriculum Vitae tradicional)',
-      'ATS (padrão para robôs de RH)',
-      'XYZ (padrão Google)',
-      'Moderno (barra lateral com foto)',
-      'Executivo (faixa escura com foto)',
-      'Clean (elegante, serif com foto)',
-      'Minimal (duas colunas sóbrias)',
-    ],
+    placeholder: 'Escolha um modelo acima...',
+    suggestions: TEMPLATES.map((template) => template.value),
   },
   {
     id: 'contact',

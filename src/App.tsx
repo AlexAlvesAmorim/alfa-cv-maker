@@ -8,6 +8,7 @@ import { ChatInput } from './components/ChatInput';
 import { SummaryCard } from './components/SummaryCard';
 import { PhotoUpload } from './components/PhotoUpload';
 import { ExperienceForm } from './components/ExperienceForm';
+import { TemplatePicker } from './components/TemplatePicker';
 import type { ProcessedPhoto } from './utils/photo';
 import { EMPTY_RESUME, SKIP_VALUE, type Message, type ResumeData, type ResumeField } from './types';
 import { FINISH_MESSAGE, STEPS, WELCOME_MESSAGE } from './data/steps';
@@ -96,7 +97,8 @@ export default function App() {
   const currentStep = STEPS[stepIndex];
   const finished = stepIndex >= STEPS.length;
   const inputDisabled = isTyping || finished;
-  const isFormStep = currentStep?.id === 'experiences' || currentStep?.id === 'photo';
+  const isFormStep =
+    currentStep?.id === 'experiences' || currentStep?.id === 'photo' || currentStep?.id === 'layout';
 
   function suggestionsNow(): string[] {
     if (!currentStep || isTyping || finished || isFormStep) return [];
@@ -206,6 +208,9 @@ export default function App() {
         </div>
         {!finished && (
           <>
+            {currentStep?.id === 'layout' && (
+              <TemplatePicker selected={resume.layout} disabled={isTyping} onPick={handleSend} />
+            )}
             {currentStep?.id === 'photo' && <PhotoUpload disabled={isTyping} onPhoto={submitPhoto} />}
             {currentStep?.id === 'experiences' && (
               <ExperienceForm initial={resume.experiences} disabled={isTyping} onSave={submitExperiences} />
