@@ -51,23 +51,27 @@ interface HeadingOptions {
   upper?: boolean;
   size?: number;
   centered?: boolean;
+  charSpace?: number;
 }
 
 function drawHeading(cursor: Cursor, text: string, x: number, width: number, color: RGB, options: HeadingOptions = {}): void {
-  const { font = 'helvetica', ruleColor, upper = false, size = 12, centered = false } = options;
+  const { font = 'helvetica', ruleColor, upper = false, size = 12, centered = false, charSpace = 0 } = options;
   const label = upper ? text.toUpperCase() : text;
-  ensureSpace(cursor, 12);
+  ensureSpace(cursor, 13);
   cursor.doc.setFont(font, 'bold');
   cursor.doc.setFontSize(size);
   cursor.doc.setTextColor(...color);
-  cursor.doc.text(label, centered ? PAGE_W / 2 : x, cursor.y, { align: centered ? 'center' : 'left' });
-  cursor.y += 1.8;
+  cursor.doc.text(label, centered ? PAGE_W / 2 : x, cursor.y, {
+    align: centered ? 'center' : 'left',
+    charSpace: charSpace || undefined,
+  });
+  cursor.y += 2.2;
   if (ruleColor) {
     cursor.doc.setDrawColor(...ruleColor);
-    cursor.doc.setLineWidth(0.4);
+    cursor.doc.setLineWidth(0.3);
     cursor.doc.line(x, cursor.y, x + width, cursor.y);
   }
-  cursor.y += 6;
+  cursor.y += 7.5;
 }
 
 interface BulletOptions {
@@ -94,9 +98,9 @@ function drawBullets(cursor: Cursor, items: string[], x: number, maxWidth: numbe
     lines.forEach((line, index) => {
       cursor.doc.text(line, x + indent, cursor.y + index * lineHeight);
     });
-    cursor.y += lines.length * lineHeight + 1.8;
+    cursor.y += lines.length * lineHeight + 2.4;
   }
-  cursor.y += 2.5;
+  cursor.y += 3.5;
 }
 
 interface ParagraphOptions {
@@ -116,7 +120,7 @@ function drawParagraph(cursor: Cursor, text: string, x: number, maxWidth: number
   lines.forEach((line, index) => {
     cursor.doc.text(line, x, cursor.y + index * lineHeight, { align: align === 'left' ? 'left' : align, maxWidth });
   });
-  cursor.y += lines.length * lineHeight + 4;
+  cursor.y += lines.length * lineHeight + 5;
 }
 
 function drawColumns(
@@ -149,19 +153,19 @@ function drawColumns(
         cursor.doc.text(lineIndex === 0 ? `${prefix}${line}` : `  ${line}`, columnX, cursor.y);
         cursor.y += size * 0.5;
       });
-      cursor.y += 1.6;
+      cursor.y += 2.2;
     }
     maxBottom = Math.max(maxBottom, cursor.y);
   });
-  cursor.y = maxBottom + 2;
+  cursor.y = maxBottom + 3;
 }
 
-function drawDotted(cursor: Cursor, x1: number, x2: number, color: RGB = [122, 122, 120]): void {
+function drawDotted(cursor: Cursor, x1: number, x2: number, color: RGB = [150, 150, 148]): void {
   cursor.doc.setFillColor(...color);
-  for (let x = x1; x < x2; x += 3.4) {
-    cursor.doc.rect(x, cursor.y - 0.9, 1.3, 1.3, 'F');
+  for (let x = x1; x < x2; x += 4.2) {
+    cursor.doc.rect(x, cursor.y - 0.8, 1.1, 1.1, 'F');
   }
-  cursor.y += 5;
+  cursor.y += 6;
 }
 
 function drawPhotoCircle(cursor: Cursor, resume: ResumeData, cx: number, cy: number, r: number): void {
@@ -206,9 +210,9 @@ const CLASSIC_STYLE: SingleColumnStyle = {
 
 function renderClassic(doc: jsPDF, resume: ResumeData): void {
   const style = CLASSIC_STYLE;
-  const marginX = 20;
+  const marginX = 22;
   const contentW = PAGE_W - marginX * 2;
-  const cursor: Cursor = { doc, y: 24 };
+  const cursor: Cursor = { doc, y: 26 };
 
   doc.setFont(style.font, 'bold');
   doc.setFontSize(style.nameSize);
@@ -238,15 +242,16 @@ function renderClassic(doc: jsPDF, resume: ResumeData): void {
   }
 
   doc.setDrawColor(...style.accent);
-  doc.setLineWidth(0.5);
+  doc.setLineWidth(0.3);
   doc.line(marginX, cursor.y, marginX + contentW, cursor.y);
-  cursor.y += 8;
+  cursor.y += 10;
 
   sectioned(buildSections(resume), [], (section) => {
     drawHeading(cursor, section.title, marginX, contentW, style.accent, {
       font: style.font,
       ruleColor: style.accent,
       upper: style.upperHeadings,
+      charSpace: 0.4,
     });
     if (section.title === 'Habilidades') {
       drawParagraph(cursor, section.items.join('  •  '), marginX, contentW, BODY, { font: style.font });
@@ -277,7 +282,7 @@ function renderAts(doc: jsPDF, resume: ResumeData): void {
     contactBlock.push([LABELS[classifyContactPart(part)], part]);
   });
   if (contactBlock.length > 0) {
-    drawHeading(cursor, 'Informações Pessoais', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 13 });
+    drawHeading(cursor, 'Informações Pessoais', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 12.5, charSpace: 0.3 });
     for (const [label, value] of contactBlock) {
       ensureSpace(cursor, 5);
       doc.setFont('helvetica', 'bold');
@@ -286,38 +291,38 @@ function renderAts(doc: jsPDF, resume: ResumeData): void {
       doc.text(label, marginX + 4, cursor.y);
       doc.setFont('helvetica', 'normal');
       doc.text(value, marginX + 34, cursor.y);
-      cursor.y += 5.2;
+      cursor.y += 5.6;
     }
-    cursor.y += 4;
+    cursor.y += 6;
   }
 
   if (resume.summary.trim()) {
-    drawHeading(cursor, 'Resumo', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 13 });
+    drawHeading(cursor, 'Resumo', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 12.5, charSpace: 0.3 });
     drawParagraph(cursor, resume.summary.trim(), marginX, contentW, BODY, { align: 'justify', size: 10.5 });
-    cursor.y += 2;
+    cursor.y += 3;
   }
 
   const education = find('Formação Acadêmica');
   if (education) {
-    drawHeading(cursor, 'Formação', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 13 });
+    drawHeading(cursor, 'Formação', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 12.5, charSpace: 0.3 });
     drawBullets(cursor, education.items, marginX, contentW, DARK2, null, { size: 10.5 });
   }
 
   const experience = find('Experiência Profissional');
   if (experience) {
-    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 13 });
+    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 12.5, charSpace: 0.3 });
     drawBullets(cursor, experience.items, marginX, contentW, BODY, MID, { size: 10, dot: '·' });
   }
 
   const skills = find('Habilidades');
   if (skills) {
-    drawHeading(cursor, 'Habilidades', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 13 });
+    drawHeading(cursor, 'Habilidades', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 12.5, charSpace: 0.3 });
     drawColumns(cursor, skills.items, marginX + 4, contentW - 4, 3, DARK2, { size: 9.5, dot: '-' });
   }
 
   const languages = find('Idiomas');
   if (languages) {
-    drawHeading(cursor, 'Idiomas', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 13 });
+    drawHeading(cursor, 'Idiomas', marginX, contentW, BLACK, { centered: true, ruleColor: BLACK, size: 12.5, charSpace: 0.3 });
     drawParagraph(cursor, languages.items.join('   |   '), marginX, contentW, BODY, { size: 10 });
   }
 }
@@ -351,37 +356,38 @@ function renderXyz(doc: jsPDF, resume: ResumeData): void {
   });
 
   doc.setDrawColor(...DIVIDER);
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.3);
   doc.line(marginX, cursor.y, marginX + contentW, cursor.y);
-  cursor.y += 8;
+  cursor.y += 10;
 
   if (resume.summary.trim()) {
-    drawHeading(cursor, 'Perfil Profissional', marginX, contentW, headColor, { centered: true, size: 12 });
+    drawHeading(cursor, 'Perfil Profissional', marginX, contentW, headColor, { centered: true, size: 11.5, charSpace: 0.4 });
     drawParagraph(cursor, resume.summary.trim(), marginX, contentW, BODY, { align: 'justify', size: 9.5 });
-    cursor.y += 2;
+    cursor.y += 4;
   }
 
   const education = find('Formação Acadêmica');
   if (education) {
-    drawHeading(cursor, 'Formação Acadêmica', marginX, contentW, headColor, { size: 12 });
+    drawHeading(cursor, 'Formação Acadêmica', marginX, contentW, headColor, { size: 11.5, charSpace: 0.3 });
     drawColumns(cursor, education.items, marginX, contentW, 2, headColor, { size: 9.5, bold: true });
+    cursor.y += 2;
   }
 
   const experience = find('Experiência Profissional');
   if (experience) {
-    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, headColor, { size: 12 });
+    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, headColor, { size: 11.5, charSpace: 0.3 });
     drawBullets(cursor, experience.items, marginX, contentW, BODY, headColor, { size: 9.5 });
   }
 
   const skills = find('Habilidades');
   if (skills) {
-    drawHeading(cursor, 'Habilidades', marginX, contentW, headColor, { size: 12 });
+    drawHeading(cursor, 'Habilidades', marginX, contentW, headColor, { size: 11.5, charSpace: 0.3 });
     drawColumns(cursor, skills.items, marginX, contentW, 3, BODY, { size: 9.5, dot: '•' });
   }
 
   const languages = find('Idiomas');
   if (languages) {
-    drawHeading(cursor, 'Idiomas', marginX, contentW, headColor, { size: 12 });
+    drawHeading(cursor, 'Idiomas', marginX, contentW, headColor, { size: 11.5, charSpace: 0.3 });
     drawColumns(cursor, languages.items, marginX, contentW, Math.min(languages.items.length, 3), BODY, { size: 9.5 });
   }
 }
@@ -395,26 +401,27 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   doc.setFillColor(...sidebarColor);
   doc.rect(0, 0, sidebarW, PAGE_H, 'F');
   doc.setFillColor(...accent);
-  doc.rect(0, 0, sidebarW, 46, 'F');
+  doc.rect(0, 0, sidebarW, 50, 'F');
 
   const cursor: Cursor = { doc, y: 0 };
-  drawPhotoCircle(cursor, resume, sidebarW / 2, 46, 19);
+  drawPhotoCircle(cursor, resume, sidebarW / 2, 50, 17.5);
 
-  let sideY = 76;
+  let sideY = 84;
   const sideX = 10;
   const sideW = sidebarW - sideX * 2;
 
   const sidebarSection = (title: string) => {
+    ensureSpace(cursor, 14, 60);
     doc.setDrawColor(...SIDEBAR_TEXT);
-    doc.setLineWidth(0.5);
-    doc.setLineDashPattern([1.6, 1.4], 0);
-    doc.line(sideX, sideY - 3.4, sideX + sideW, sideY - 3.4);
+    doc.setLineWidth(0.35);
+    doc.setLineDashPattern([1.4, 1.6], 0);
+    doc.line(sideX, sideY - 4.2, sideX + sideW, sideY - 4.2);
     doc.setLineDashPattern([], 0);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
+    doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
-    doc.text(title.toUpperCase(), sideX, sideY);
-    sideY += 6.5;
+    doc.text(title.toUpperCase(), sideX, sideY, { charSpace: 0.35 });
+    sideY += 7.5;
   };
 
   sidebarSection('Contato');
@@ -465,32 +472,32 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
 
   const mainX = sidebarW + 12;
   const mainW = PAGE_W - mainX - 14;
-  const main: Cursor = { doc, y: 26 };
+  const main: Cursor = { doc, y: 28 };
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
   doc.setTextColor(...INK);
   const nameLines = doc.splitTextToSize(resume.fullName || 'Nome não informado', mainW) as string[];
-  nameLines.forEach((line, index) => doc.text(line, mainX, main.y + index * 8));
-  main.y += nameLines.length * 8 + 1;
+  nameLines.forEach((line, index) => doc.text(line, mainX, main.y + index * 8.5));
+  main.y += nameLines.length * 8.5 + 2;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11.5);
   doc.setTextColor(...accent);
   doc.text(resume.targetRole || '', mainX, main.y);
-  main.y += 8;
+  main.y += 10;
 
   const mainHeading = (title: string) => {
-    ensureSpace(main, 14);
+    ensureSpace(main, 16);
     doc.setDrawColor(...accent);
-    doc.setLineWidth(1);
+    doc.setLineWidth(0.45);
     doc.line(mainX, main.y, mainX + mainW, main.y);
-    main.y += 5.5;
+    main.y += 6.5;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11.5);
     doc.setTextColor(...accent);
-    doc.text(title.toUpperCase(), mainX, main.y);
-    main.y += 7;
+    doc.text(title.toUpperCase(), mainX, main.y, { charSpace: 0.4 });
+    main.y += 8.5;
   };
 
   if (resume.summary.trim()) {
@@ -529,36 +536,36 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
 function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
   const headColor = accentRgb(resume, SLATE_HEAD);
   doc.setFillColor(...SLATE);
-  doc.rect(0, 0, PAGE_W, 54, 'F');
+  doc.rect(0, 0, PAGE_W, 58, 'F');
 
   const cursor: Cursor = { doc, y: 0 };
-  drawPhotoCircle(cursor, resume, 40, 27, 19);
+  drawPhotoCircle(cursor, resume, 40, 29, 17.5);
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(24);
+  doc.setFontSize(23);
   doc.setTextColor(255, 255, 255);
-  doc.text(resume.fullName || 'Nome não informado', 70, 24);
+  doc.text(resume.fullName || 'Nome não informado', 70, 26);
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(...LIGHT_BLUE);
-  doc.text((resume.targetRole || '').toUpperCase(), 70, 33);
+  doc.text((resume.targetRole || '').toUpperCase(), 70, 36, { charSpace: 0.5 });
 
-  let sideY = 68;
+  let sideY = 76;
   const sideX = 14;
   const sideW = 60;
 
   const sideHeading = (title: string) => {
-    ensureSpace(cursor, 12, 60);
-    sideY += 3;
+    ensureSpace(cursor, 13, 60);
+    sideY += 4;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(...headColor);
-    doc.text(title.toUpperCase(), sideX, sideY);
-    sideY += 1.8;
+    doc.text(title.toUpperCase(), sideX, sideY, { charSpace: 0.35 });
+    sideY += 2.2;
     doc.setDrawColor(...headColor);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.3);
     doc.line(sideX, sideY, sideX + sideW, sideY);
-    sideY += 5.5;
+    sideY += 6.5;
   };
 
   const sideLines = (items: string[]) => {
@@ -602,19 +609,19 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
 
   const mainX = 86;
   const mainW = PAGE_W - mainX - 14;
-  const main: Cursor = { doc, y: 66 };
+  const main: Cursor = { doc, y: 72 };
 
   const mainHeading = (title: string) => {
-    ensureSpace(main, 14);
+    ensureSpace(main, 16);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12.5);
+    doc.setFontSize(12);
     doc.setTextColor(...headColor);
-    doc.text(title.toUpperCase(), mainX, main.y);
-    main.y += 2;
+    doc.text(title.toUpperCase(), mainX, main.y, { charSpace: 0.4 });
+    main.y += 2.5;
     doc.setDrawColor(...LIGHT_BLUE);
-    doc.setLineWidth(0.6);
+    doc.setLineWidth(0.35);
     doc.line(mainX, main.y, mainX + mainW, main.y);
-    main.y += 7;
+    main.y += 9;
   };
 
   if (resume.summary.trim()) {
@@ -640,12 +647,12 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
 function renderClean(doc: jsPDF, resume: ResumeData): void {
   const accent = accentRgb(resume, TEAL);
   const marginX = 16;
-  const cursor: Cursor = { doc, y: 20 };
+  const cursor: Cursor = { doc, y: 22 };
 
   if (resume.photo) {
     doc.addImage(resume.photo, 'PNG', PAGE_W - marginX - 40, 14, 40, 53.3);
     doc.setDrawColor(...accent);
-    doc.setLineWidth(1);
+    doc.setLineWidth(0.7);
     doc.roundedRect(PAGE_W - marginX - 41, 13, 42, 55.3, 4, 4, 'S');
   }
 
@@ -664,22 +671,22 @@ function renderClean(doc: jsPDF, resume: ResumeData): void {
     const lines = doc.splitTextToSize(part, 120) as string[];
     ensureSpace(cursor, lines.length * 5);
     lines.forEach((line, index) => doc.text(line, marginX, cursor.y + index * 5));
-    cursor.y += lines.length * 5 + 0.6;
+    cursor.y += lines.length * 5 + 1.2;
   }
 
-  cursor.y += 3;
+  cursor.y += 4;
   drawDotted(cursor, marginX, 120);
 
   const sections = buildSections(resume);
   const find = (title: string) => sections.find((section) => section.title === title);
 
   const cleanHeading = (title: string) => {
-    ensureSpace(cursor, 12);
+    ensureSpace(cursor, 13);
     doc.setFont('times', 'bolditalic');
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setTextColor(...accent);
     doc.text(title, marginX, cursor.y);
-    cursor.y += 6.5;
+    cursor.y += 8;
   };
 
   if (resume.targetRole.trim()) {
@@ -750,10 +757,10 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
 
   const leftHeading = (title: string) => {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12.5);
+    doc.setFontSize(12);
     doc.setTextColor(...DARK2);
-    doc.text(title.toUpperCase(), leftRight, leftY);
-    leftY += 6.5;
+    doc.text(title.toUpperCase(), leftRight, leftY, { align: 'right', charSpace: 0.35 });
+    leftY += 7.5;
   };
 
   const leftLines = (items: string[], bold = false) => {
@@ -764,11 +771,11 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
       const lines = doc.splitTextToSize(item, leftW) as string[];
       for (const line of lines) {
         doc.text(line, leftRight, leftY, { align: 'right' });
-        leftY += 4.6;
+        leftY += 5;
       }
-      leftY += 1.2;
+      leftY += 1.8;
     }
-    leftY += 4;
+    leftY += 6;
   };
 
   let leftY = resume.photo ? 74 : 22;
@@ -795,7 +802,7 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
   leftLines(orderedContactParts(resume.contact));
 
   doc.setDrawColor(...DIVIDER);
-  doc.setLineWidth(0.8);
+  doc.setLineWidth(0.4);
   doc.line(86, 14, 86, 283);
 
   const mainX = 94;
@@ -805,14 +812,14 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(21);
   doc.setTextColor(...DARK2);
-  doc.text((resume.fullName || 'Nome não informado').toUpperCase(), mainX, main.y);
-  main.y += 7;
+  doc.text((resume.fullName || 'Nome não informado').toUpperCase(), mainX, main.y, { charSpace: 0.3 });
+  main.y += 8;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10.5);
   doc.setTextColor(...MID);
-  doc.text((resume.targetRole || '').toUpperCase(), mainX, main.y);
-  main.y += 9;
+  doc.text((resume.targetRole || '').toUpperCase(), mainX, main.y, { charSpace: 0.4 });
+  main.y += 10;
 
   if (resume.summary.trim()) {
     drawParagraph(main, resume.summary.trim(), mainX, mainW, BODY, { size: 9.5 });
@@ -820,21 +827,21 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
 
   const experience = find('Experiência Profissional');
   if (experience) {
-    main.y += 2;
+    main.y += 3;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(12.5);
     doc.setTextColor(...DARK2);
-    ensureSpace(main, 12);
-    doc.text('EXPERIÊNCIA PROFISSIONAL', mainX, main.y);
-    main.y += 8;
+    ensureSpace(main, 13);
+    doc.text('EXPERIÊNCIA PROFISSIONAL', mainX, main.y, { charSpace: 0.4 });
+    main.y += 9;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9.5);
     for (const item of experience.items) {
       const lines = doc.splitTextToSize(item, mainW) as string[];
-      ensureSpace(main, lines.length * 4.7 + 3);
+      ensureSpace(main, lines.length * 4.7 + 4);
       doc.setTextColor(...BODY);
       lines.forEach((line, index) => doc.text(line, mainX, main.y + index * 4.7));
-      main.y += lines.length * 4.7 + 3.4;
+      main.y += lines.length * 4.7 + 4.2;
     }
   }
 }

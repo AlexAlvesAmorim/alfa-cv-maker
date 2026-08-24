@@ -61,15 +61,15 @@ function run(text: string, options: RunOptions = {}): TextRun {
   });
 }
 
-function paragraph(children: TextRun[], afterSpacing = 120): Paragraph {
-  return new Paragraph({ children, spacing: { after: afterSpacing, line: 276 } });
+function paragraph(children: TextRun[], afterSpacing = 140): Paragraph {
+  return new Paragraph({ children, spacing: { after: afterSpacing, line: 288 } });
 }
 
 function bullet(text: string, color = BODY): Paragraph {
   return new Paragraph({
     children: [run(text, { color })],
     bullet: { level: 0 },
-    spacing: { after: 60, line: 264 },
+    spacing: { after: 85, line: 276 },
   });
 }
 
@@ -90,16 +90,16 @@ function heading(text: string, color: string, options: HeadingOptions = {}): Par
     alignment: centered ? AlignmentType.CENTER : right ? AlignmentType.RIGHT : AlignmentType.LEFT,
     children: [new TextRun({ text: label, bold: true, size, color, italics, font })],
     border: ruleColor
-      ? { bottom: { style: BorderStyle.SINGLE, size: 8, color: ruleColor, space: 3 } }
+      ? { bottom: { style: BorderStyle.SINGLE, size: 5, color: ruleColor, space: 4 } }
       : undefined,
-    spacing: { before: 220, after: 120 },
+    spacing: { before: 300, after: 150 },
   });
 }
 
 function dottedSeparator(color = '7A7A78'): Paragraph {
   return new Paragraph({
-    border: { bottom: { style: BorderStyle.DOTTED, size: 12, color, space: 2 } },
-    spacing: { before: 60, after: 200 },
+    border: { bottom: { style: BorderStyle.DOTTED, size: 6, color, space: 3 } },
+    spacing: { before: 80, after: 260 },
     children: [],
   });
 }
@@ -318,15 +318,15 @@ function buildSidebarCell(resume: ResumeData, options: SidebarTableOptions): Tab
 function sidebarParagraph(text: string, color = 'FFFFFF'): Paragraph {
   return new Paragraph({
     children: [new TextRun({ text, size: 18, color })],
-    spacing: { after: 70, line: 250 },
+    spacing: { after: 95, line: 264 },
   });
 }
 
 function sidebarTitle(text: string, color = 'FFFFFF'): Paragraph {
   return new Paragraph({
     children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 20, color })],
-    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color, space: 2 } },
-    spacing: { before: 260, after: 130 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color, space: 3 } },
+    spacing: { before: 320, after: 160 },
   });
 }
 
@@ -572,11 +572,11 @@ function buildMinimalDoc(resume: ResumeData): Document {
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           children: [new TextRun({ text: item, size: 19, bold, color: MUTED })],
-          spacing: { after: 50 },
+          spacing: { after: 70 },
         }),
       );
     }
-    leftChildren.push(new Paragraph({ spacing: { after: 140 }, children: [] }));
+    leftChildren.push(new Paragraph({ spacing: { after: 200 }, children: [] }));
   };
 
   const education = find('Formação Acadêmica');
