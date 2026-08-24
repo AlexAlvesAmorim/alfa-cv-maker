@@ -246,6 +246,7 @@
 }
 
 .template-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -278,16 +279,43 @@
 .template-card__thumb {
   position: relative;
   display: block;
+  padding: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 1px solid var(--border-red);
   aspect-ratio: 210 / 297;
+  cursor: zoom-in;
+  transition: border-color 0.15s;
+}
+
+.template-card__thumb:hover {
+  border-color: var(--red-glow);
 }
 
 .template-card__thumb svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.template-card__zoom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 8px 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-main);
+  background: linear-gradient(transparent, rgba(10, 2, 4, 0.88));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.template-card__thumb:hover .template-card__zoom,
+.template-card__thumb:focus-visible .template-card__zoom {
+  opacity: 1;
 }
 
 .template-card__badge {
@@ -304,10 +332,30 @@
   border-radius: 999px;
 }
 
+.template-card__select {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+.template-card__select:hover:not(:disabled) .template-card__label {
+  color: var(--red-glow);
+}
+
+.template-card__select:disabled {
+  cursor: wait;
+}
+
 .template-card__label {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-main);
+  transition: color 0.15s;
 }
 
 .template-card__desc {
