@@ -22,13 +22,20 @@ describe('sugestões dinâmicas', () => {
 
   it('cita a conquista no resumo', () => {
     const summaries = suggestionsFor('summary', salesResume) ?? [];
-    expect(summaries).toHaveLength(3);
-    expect(summaries.every((summary) => summary.toLowerCase().includes('vendas'))).toBe(true);
+    expect(summaries.length).toBeGreaterThanOrEqual(4);
+    expect(summaries.some((summary) => summary.toLowerCase().includes('vendas'))).toBe(true);
   });
 
   it('usa modo primeira oportunidade sem experiências', () => {
     const summaries = suggestionsFor('summary', EMPTY_RESUME) ?? [];
-    expect(summaries[0]).toContain('primeira oportunidade');
+    expect(summaries.length).toBeGreaterThanOrEqual(4);
+    expect(summaries.some((summary) => summary.includes('primeira oportunidade'))).toBe(true);
+  });
+
+  it('inclui frases prontas de objetivo no passo alvo', () => {
+    const suggestions = suggestionsFor('targetRole', salesResume) ?? [];
+    expect(suggestions.some((item) => item.startsWith('Sou iniciante na carreira'))).toBe(true);
+    expect(suggestions.length).toBeGreaterThan(20);
   });
 
   it('sugere pacote de habilidades da area', () => {

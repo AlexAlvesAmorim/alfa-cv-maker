@@ -61,7 +61,11 @@ export const STEPS: ChatStep[] = [
     id: 'summary',
     dynamic: true,
     question:
-      'Com base no seu objetivo e nas suas experiências, preparei alguns resumos profissionais prontos. Escolha um ou escreva o seu:',
+      'Com base no seu objetivo e nas suas experiências, preparei resumos prontos. Uma boa estrutura tem 3 partes:\n\n'
+      + '1. Cargo ou área de interesse\n'
+      + '2. Um diferencial ou competência importante\n'
+      + '3. Seu propósito com a vaga\n\n'
+      + 'Escolha uma sugestão ou escreva o seu:',
     placeholder: 'Ou digite seu próprio resumo...',
     suggestions: [],
   },

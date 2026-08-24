@@ -58,7 +58,10 @@ check('objetivo dinâmico detecta área comercial', roles.some((role) => /vendas
 
 const summaries = suggestionsFor('summary', salesResume) ?? [];
 console.log(`Primeiro resumo sugerido: ${summaries[0]?.slice(0, 90)}...`);
-check('resumo dinâmico cita a conquista', summaries.length === 3 && summaries.every((item) => item.includes('vendas')));
+check(
+  'resumo dinâmico cita a conquista',
+  summaries.length >= 4 && summaries.some((item) => item.toLowerCase().includes('vendas')),
+);
 
 const skills = suggestionsFor('skills', salesResume) ?? [];
 console.log(`Habilidades sugeridas: ${skills[0]}`);
@@ -67,7 +70,13 @@ check('habilidades dinâmicas do pacote comercial', skills[0]?.includes('Vendas'
 const juniorResume: ResumeData = { ...salesResume, experiences: [] };
 const juniorSummaries = suggestionsFor('summary', juniorResume) ?? [];
 console.log(`Resumo iniciante: ${juniorSummaries[0]?.slice(0, 80)}...`);
-check('modo primeira oportunidade ativado', juniorSummaries[0]?.includes('primeira oportunidade') === true);
+check(
+  'modo primeira oportunidade ativado',
+  juniorSummaries.some((item) => item.includes('primeira oportunidade')),
+);
+
+const objectives = suggestionsFor('targetRole', salesResume) ?? [];
+check('frases prontas de objetivo disponíveis', objectives.some((item) => item.startsWith('Sou iniciante na carreira')));
 
 const LAYOUTS = [
   'Clássico (Curriculum Vitae tradicional)',
