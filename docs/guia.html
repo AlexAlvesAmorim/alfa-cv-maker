@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Guia Completo - Alfa Curriculum Maker</title>
+<style>
+  :root {
+    --red: #b3121f;
+    --red-dark: #7c0d19;
+    --ink: #241417;
+    --muted: #6d5559;
+    --code-bg: #2a0c12;
+    --paper: #fffafa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.65;
+    margin: 0;
+    font-size: 13.5px;
+  }
+  .page { padding: 48px 56px; page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  h1, h2, h3, h4 { font-family: 'Segoe UI', Arial, sans-serif; color: var(--red-dark); }
+  h1 { font-size: 30px; border-bottom: 3px solid var(--red); padding-bottom: 10px; margin-top: 0;}
+  h2 { font-size: 22px; margin-top: 34px; border-left: 5px solid var(--red); padding-left: 12px; }
+  h3 { font-size: 17px; margin-top: 26px; }
+  h4 { font-size: 14.5px; margin-top: 20px; color: var(--ink); }
+  code {
+    font-family: Consolas, 'Courier New', monospace;
+    background: #f3e2e2;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: #ffe9ec;
+    padding: 16px;
+    border-radius: 10px;
+    overflow-x: auto;
+    border-left: 4px solid var(--red);
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+  pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+  .cm { color: #ff9aa5; } /* comment */
+  .kw { color: #ff6479; font-weight: bold; } /* keyword */
+  .ty { color: #ffc46b; } /* type */
+  .st { color: #a8e6a1; } /* string */
+  .fn { color: #8fd4ff; } /* function */
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-family: 'Segoe UI', Arial, sans-serif; font-size: 12.5px; }
+  th, td { border: 1px solid #e3c8cb; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--red-dark); color: #fff; }
+  tr:nth-child(even) td { background: #fbeeee; }
+  .box {
+    border: 1px solid #eccfd2;
+    background: #fdf1f1;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 12.5px;
+  }
+  .box b.label { color: var(--red-dark); text-transform: uppercase; font-size: 11px; letter-spacing: .5px; display:block; margin-bottom: 6px;}
+  .cover { text-align: center; padding-top: 130px; }
+  .cover .logo {
+    width: 92px; height: 92px; margin: 0 auto 28px;
+    background: linear-gradient(145deg, #c1121f, #7c0d19);
+    border: 3px solid #ff4d5e; border-radius: 22px;
+    color: #fff; font-size: 52px; font-weight: 800;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: grid; place-items: center;
+  }
+  .cover h1 { border: none; font-size: 40px; }
+  .cover p.sub { color: var(--muted); font-size: 17px; font-style: italic; }
+  ul { padding-left: 24px; }
+  li { margin-bottom: 5px; }
+  .toc li { margin-bottom: 9px; font-family: 'Segoe UI', Arial, sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ================= CAPA ================= -->
+<div class="page cover">
+  <div class="logo">A</div>
+  <h1>Alfa Curriculum Maker</h1>
+  <p class="sub">Guia completo de estudo: cada linha explicada,<br/>como implementar e o porquê de cada decisão.</p>
+  <p style="margin-top:40px;">React 19 · TypeScript · Vite 8 · CSS puro</p>
+  <p>Documento didático para desenvolvedores Júnior</p>
+</div>
+
+<!-- ================= SUMÁRIO ================= -->
+<div class="page">
+  <h1>Sumário</h1>
+  <ol class="toc">
+    <li>Visão geral do projeto e da stack</li>
+    <li>Preparando o ambiente (passo a passo)</li>
+    <li>Anatomia das pastas do projeto</li>
+    <li><code>src/types.ts</code> — os contratos de dados (linha por linha)</li>
+    <li><code>src/data/steps.ts</code> — o roteiro da conversa</li>
+    <li><code>Header.tsx</code> — cabeçalho e barra de progresso</li>
+    <li><code>ChatMessage.tsx</code> — bolha de mensagem</li>
+    <li><code>TypingIndicator.tsx</code> — animação "digitando"</li>
+    <li><code>SuggestionChips.tsx</code> — botões de sugestão</li>
+    <li><code>ChatInput.tsx</code> — campo de digitação</li>
+    <li><code>SummaryCard.tsx</code> — resumo final + download</li>
+    <li><code>App.tsx</code> — o cérebro: máquina de estados do chat</li>
+    <li>CSS: tema vermelho sangue explicado</li>
+    <li>Rodar, buildar e validar o projeto</li>
+    <li>Próximos passos: backend, PDF real e testes</li>
+    <li>Glossário essencial para devs juniores</li>
+  </ol>
+
+  <div class="box"><b class="label">Como usar este guia</b>
+  Leia cada capítulo com o arquivo correspondente aberto no seu editor. Sempre que vir um bloco de código,
+  tente responder antes de ler a explicação: "o que essa linha faz?". Depois compare. Os quadros
+  <b>Como implementar</b>, <b>Por que assim</b> e <b>Erro comum</b> aparecem nos pontos onde juniores mais travam.</div>
+</div>
+
+<!-- ================= CAP 1 ================= -->
+<div class="page">
+  <h1>1. Visão geral do projeto</h1>
+  <p>O <b>Alfa Curriculum Maker</b> é um web app de conversa (estilo chat) onde o usuário responde perguntas
+  e, ao final, recebe um currículo montado. A identidade visual segue a pegada do AlfaPDFReader:
+  <b>fundo escuro com tons de vermelho sangue</b>.</p>
+
+  <h3>A stack escolhida e o porquê de cada peça</h3>
+  <table>
+    <tr><th>Tecnologia</th><th>Papel</th><th>Por quê?</th></tr>
+    <tr><td><b>Vite 8</b></td><td>Bundler + servidor de desenvolvimento</td><td>Sobe em milissegundos, recarrega a página ao salvar (HMR) e já vem configurado com TypeScript. Alternativas antigas (Create React App) estão obsoletas.</td></tr>
+    <tr><td><b>React 19</b></td><td>Biblioteca de interface</td><td>Ideal para apps orientados a estado — exatamente o caso de um chat: cada resposta muda a tela.</td></tr>
+    <tr><td><b>TypeScript 6</b></td><td>Type safety</td><td>Erros de digitação e de formato são pegos ANTES de rodar. Para quem está começando, o TS funciona como um professor que corrige na hora.</td></tr>
+    <tr><td><b>CSS puro</b></td><td>Estilização</td><td>Sem Tailwind/styled-components de propósito: você aprende fundamentos que servem em qualquer projeto.</td></tr>
+    <tr><td><b>oxlint</b></td><td>Linter</td><td>Pega código suspeito (variável não usada, bugs clássicos) sem configuração.</td></tr>
+  </table>
+
+  <h3>O fluxo do app em uma frase</h3>
+  <p>O app mantém uma lista de mensagens (<i>chat</i>) e uma lista de etapas (<i>roteiro</i>). Quando o usuário
+  responde uma etapa, salvamos a resposta no objeto <code>resume</code>, avançamos o índice da etapa e o
+  assistente faz a próxima pergunta. Na última etapa mostramos o resumo e o botão de download.</p>
+
+  <div class="box"><b class="label">Conceito-chave: estado dirige a interface</b>
+  Nada aqui manipula o DOM diretamente (nada de <code>document.getElementById(...)</code> para trocar texto).
+  Mudamos objetos de estado (<code>useState</code>) e o React redesenha a tela. Esse é o modelo mental do React:
+  <b>UI = f(estado)</b>. Grave isso.</div>
+</div>
+
+<!-- ================= CAP 2 ================= -->
+<div class="page">
+  <h1>2. Preparando o ambiente</h1>
+  <h3>Pré-requisitos</h3>
+  <ul>
+    <li><b>Node.js 18+</b> (usamos a v24). Verifique no terminal: <code>node --version</code></li>
+    <li><b>npm</b> (vem junto com o Node): <code>npm --version</code></li>
+    <li>VS Code (recomendado) + extensão oficial ESLint/oxlint opcional</li>
+  </ul>
+
+  <h3>Criação do projeto (o que realmente aconteceu)</h3>
+<pre><code><span class="cm"># cria o projeto na pasta atual usando o template react + typescript</span>
+npm create vite@latest . -- --template react-ts
+
+<span class="cm"># instala as dependências listadas no package.json</span>
+npm install</code></pre>
+
+  <table>
+    <tr><th>Comando</th><th>Para que serve</th></tr>
+    <tr><td><code>npm run dev</code></td><td>Sobe servidor local em <code>http://localhost:5173</code> com recarga automática. Use durante o desenvolvimento.</td></tr>
+    <tr><td><code>npm run build</code></td><td>Roda o TypeScript (<code>tsc -b</code>) e gera a versão otimizada na pasta <code>dist/</code>. Se tiver erro de tipo, o build falha — é proposital.</td></tr>
+    <tr><td><code>npm run lint</code></td><td>Analisa o código procurando problemas (variáveis mortas, erros lógicos).</td></tr>
+    <tr><td><code>npm run preview</code></td><td>Serve a pasta <code>dist/</code> localmente para você testar o build de produção antes de publicar.</td></tr>
+  </table>
+
+  <div class="box"><b class="label">Por que o build roda o TypeScript antes do Vite?</b>
+  Olhe o <code>package.json</code>: <code>"build": "tsc -b && vite build"</code>. O <code>&amp;&amp;</code> significa
+  "só continue se o anterior teve sucesso". Ou seja: nenhum código com erro de tipo chega a ser empacotado.
+  É sua primeira barreira de qualidade automatizada.</div>
+</div>
+
+<!-- ================= CAP 3 ================= -->
+<div class="page">
+  <h1>3. Anatomia das pastas</h1>
+<pre><code>AlfaCurriculumMaker/
+├── index.html              <span class="cm"># página HTML única (SPA) — carrega src/main.tsx</span>
+├── package.json            <span class="cm"># dependências + scripts npm</span>
+├── tsconfig*.json          <span class="cm"># regras do TypeScript (app e node separados)</span>
+├── vite.config.ts          <span class="cm"># config do Vite (plugin React)</span>
+├── public/
+│   └── favicon.svg         <span class="cm"># ícone da aba do navegador</span>
+└── src/
+    ├── main.tsx            <span class="cm"># porta de entrada: monta o App no DOM</span>
+    ├── index.css           <span class="cm"># reset global + variáveis do tema vermelho</span>
+    ├── App.tsx             <span class="cm"># cérebro: estado do chat + composição dos componentes</span>
+    ├── App.css             <span class="cm"># estilos dos componentes do chat</span>
+    ├── types.ts            <span class="cm"># contratos de dados (interfaces/types)</span>
+    ├── data/
+    │   └── steps.ts        <span class="cm"># roteiro das perguntas + sugestões</span>
+    └── components/
+        ├── Header.tsx           <span class="cm"># logo + barra de progresso</span>
+        ├── ChatMessage.tsx      <span class="cm"># bolha do bot ou do usuário</span>
+        ├── TypingIndicator.tsx  <span class="cm"># três pontinhos animados</span>
+        ├── SuggestionChips.tsx  <span class="cm"># chips clicáveis com exemplos</span>
+        ├── ChatInput.tsx        <span class="cm"># input + botão enviar</span>
+        └── SummaryCard.tsx      <span class="cm"># resumo final + download .txt</span>
+</code></pre>
+
+  <h3>Regras de organização (memorize estas)</h3>
+  <ul>
+    <li><b>Componentes recebem dados via props e disparam eventos para cima.</b> Um componente nunca altera o estado do pai diretamente — ele chama uma função passada pelo pai.</li>
+    <li><b>Dados de conteúdo ficam longe da UI.</b> As perguntas vivem em <code>data/steps.ts</code>. Se amanhã você quiser editar o texto de uma pergunta, não vai caçar dentro de JSX.</li>
+    <li><b>Tipos compartilhados ficam em <code>types.ts</code>.</b> Importados por todos, evita que cada arquivo invente um formato diferente.</li>
+  </ul>
+
+  <div class="box"><b class="label">Como implementar (padrão de componente)</b>
+  Todo componente deste projeto segue a mesma receita:
+  1) defina a <b>interface das props</b> acima do componente; 2) exporte uma função com o mesmo nome do arquivo;
+  3) retorne JSX; 4) estilos ficam no CSS central com classes prefixadas pelo nome do bloco
+  (ex.: <code>.header__logo</code> — padrão BEM simplificado).</div>
+</div>
+
+<!-- ================= CAP 4 ================= -->
+<div class="page">
+  <h1>4. src/types.ts — os contratos de dados</h1>
+<p>Este arquivo é pequeno mas é a fundação de tudo. Comece sempre pelos tipos quando estiver planejando uma feature: eles são a documentação viva do domínio.</p>
+
+<h4>Linha por linha</h4>
+<pre><code><span class="kw">export type</span> Sender = <span class="st">'bot'</span> | <span class="st">'user'</span>;
+<span class="cm">// Union type: Sender só pode ser 'bot' OU 'user'.</span>
+<span class="cm">// Por quê? Evita booleanos ambíguos tipo isBot/isUser duplicados.</span>
+<span class="cm">// Erro comum: usar string livre — aí alguém digita 'Bot' com B maiúsculo e quebra o CSS.</span>
+
+<span class="kw">export interface</span> <span class="ty">Message</span> {
+  id: number;        <span class="cm">// identificador único — usamos como key na lista do React</span>
+  from: Sender;      <span class="cm">// quem enviou (define a cor da bolha)</span>
+  text: string;      <span class="cm">// conteúdo</span>
+}
+
+<span class="kw">export interface</span> <span class="ty">ResumeData</span> {
+  fullName: string;   <span class="cm">// nome completo</span>
+  targetRole: string; <span class="cm">// vaga desejada</span>
+  layout: string;     <span class="cm">// estilo visual escolhido (clássico/moderno/minimalista)</span>
+  contact: string;    <span class="cm">// email/telefone/cidade/linkedin</span>
+  summary: string;    <span class="cm">// resumo profissional</span>
+  experience: string; <span class="cm">// experiências</span>
+  education: string;  <span class="cm">// formação</span>
+  skills: string;     <span class="cm">// habilidades</span>
+  languages: string;  <span class="cm">// idiomas (opcional)</span>
+}
+<span class="cm">// Por quê strings simples e não arrays/objetos complexos?</span>
+<span class="cm">// Decisão de escopo: no MVP o usuário digita texto corrido.</span>
+<span class="cm">// Quando integrar backend, experience pode virar Experience[] — e só este arquivo muda.</span>
+
+<span class="kw">export type</span> ResumeField = <span class="kw">keyof</span> ResumeData;
+<span class="cm">// keyof cria um union com as chaves do ResumeData:</span>
+<span class="cm">// 'fullName' | 'targetRole' | ... | 'languages'</span>
+<span class="cm">// Uso: permitir acesso dinâmico seguro — obj[campo] sem perder type safety.</span>
+
+<span class="kw">export interface</span> <span class="ty">ChatStep</span> {
+  id: ResumeField;        <span class="cm">// qual campo do currículo esta etapa preenche</span>
+  question: string;       <span class="cm">// pergunta exibida no chat</span>
+  placeholder: string;    <span class="cm">// texto de ajuda dentro do input</span>
+  suggestions: string[];  <span class="cm">// chips de exemplo</span>
+  optional?: boolean;     <span class="cm">// ? = propriedade OPCIONAL (pode ser undefined)</span>
+}
+
+<span class="kw">export const</span> EMPTY_RESUME: ResumeData = { ... };
+<span class="cm">// Objeto inicial com todas as strings vazias.</span>
+<span class="cm">// Por quê? Evita undefined espalhado: todo campo existe desde o início.</span>
+<span class="cm">// Usamos no useState inicial e no botão "Recomeçar".</span>
+
+<span class="kw">export const</span> SKIP_VALUE = <span class="st">'__skip__'</span>;
+<span class="cm">// Valor-sentinela: identifica internamente que o usuário pulou a etapa.</span>
+<span class="cm">// Nunca aparece na tela; é traduzido para '' antes de salvar.</span></code></pre>
+
+  <div class="box"><b class="label">Erro comum de júnior</b>
+  Declarar tipos duplicados em vários arquivos ("interface IMessage aqui, outra ali"). Regra:
+  <b>um conceito de domínio = um tipo</b>, definido uma vez e importado. Se dois lugares precisam,
+  ambos importam de <code>types.ts</code>.</div>
+</div>
+
+<!-- ================= CAP 5 ================= -->
+<div class="page">
+  <h1>5. src/data/steps.ts — o roteiro da conversa</h1>
+<p>Aqui vive o "script" do assistente. O app é genérico: ele percorre o array <code>STEPS</code> do início ao fim, sem saber quais são as perguntas. Isso significa que <b>você pode adicionar/remeter/reordenar perguntas sem tocar em nenhuma linha de lógica</b>.</p>
+
+<pre><code><span class="kw">import type</span> { ChatStep } <span class="kw">from</span> <span class="st">'../types'</span>;
+<span class="cm">// import type = importa APENAS o tipo, some do bundle final.</span>
+<span class="cm">// Boa prática obrigatória quando tsconfig usa verbatimModuleSyntax.</span>
+
+<span class="kw">export const</span> WELCOME_MESSAGE =
+  <span class="st">'Bem-vindo ao Alfa Curriculum Maker! ...'</span>;
+
+<span class="kw">export const</span> STEPS: ChatStep[] = [
+  {
+    id: <span class="st">'fullName'</span>,
+    question: <span class="st">'Qual é o seu nome completo?'</span>,
+    placeholder: <span class="st">'Digite seu nome completo...'</span>,
+    suggestions: [<span class="st">'Meu nome é Maria Oliveira Santos'</span>, <span class="st">'João Pedro Almeida'</span>],
+  },
+  ...
+  {
+    id: <span class="st">'languages'</span>,
+    question: <span class="st">'Por último: você fala algum idioma além do português?'</span>,
+    placeholder: <span class="st">'Ex.: Inglês intermediário'</span>,
+    optional: true,
+    suggestions: [<span class="st">'Inglês intermediário'</span>, <span class="st">'Pular esta etapa'</span>],
+  },
+];</code></pre>
+
+<table>
+  <tr><th>Decisão</th><th>Motivo técnico</th></tr>
+  <tr><td>Array ordenado (não objeto)</td><td>A ordem das perguntas importa. Percorrer array por índice (<code>STEPS[stepIndex]</code>) é trivial.</td></tr>
+  <tr><td><code>suggestions: []</code> permitido</td><td>Nem toda pergunta precisa de chips. O componente de chips simplesmente não renderiza nada.</td></tr>
+  <tr><td><code>optional?: true</code> apenas em idiomas</td><td>Habilita o chip "Pular esta etapa", renderizado condicionalmente.</td></tr>
+  <tr><td>Textos completos fora do JSX</td><td>Permite futura i18n (tradução) e edição por não-programadores.</td></tr>
+</table>
+
+<div class="box"><b class="label">Exercício sugerido</b>
+Adicione uma nova etapa entre formação e habilidades chamada <code>certifications</code>.
+Você precisará: (1) criar o campo em <code>ResumeData</code>; (2) adicionar o item em <code>STEPS</code>;
+(3) adicionar o rótulo em <code>FIELD_LABELS</code> dentro do <code>SummaryCard</code>.
+Se fez só isso, o sistema inteiro já funciona — esse é o sinal de bom design.</div>
+</div>
+
+<!-- ================= CAP 6 ================= -->
+<div class="page">
+  <h1>6. Header.tsx — cabeçalho e progresso</h1>
+<pre><code><span class="kw">interface</span> HeaderProps {
+  step: number;        <span class="cm">// etapa ATUAL (começa em 1)</span>
+  totalSteps: number;  <span class="cm">// total de etapas (STEPS.length)</span>
+}
+
+<span class="kw">export function</span> <span class="fn">Header</span>({ step, totalSteps }: HeaderProps) {
+  <span class="kw">const</span> progress = Math.<span class="fn">round</span>((step / totalSteps) * 100);
+
+  <span class="kw">return</span> (
+    &lt;header className=<span class="st">"header"</span>&gt;
+      &lt;div className=<span class="st">"header__brand"</span>&gt;
+        &lt;span className=<span class="st">"header__logo"</span>&gt;A&lt;/span&gt;
+        ...
+      &lt;/div&gt;
+      &lt;div className=<span class="st">"header__progress"</span> aria-label={<span class="st">`Etapa ${step} de ${totalSteps}`</span>}&gt;
+        &lt;div className=<span class="st">"header__progress-bar"</span>&gt;
+          &lt;div className=<span class="st">"header__progress-fill"</span> style={{ width: `${progress}%` }} /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+  );
+}</code></pre>
+<ul>
+<li><code>interface HeaderProps</code> — contrata as props. Se o pai esquecer uma prop obrigatória, o TS acusa no ato.</li>
+<li><code>Math.round((step / totalSteps) * 100)</code> — regra de três para percentual. Ex.: 3 de 9 etapas → 33%.</li>
+<li><code>aria-label</code> com template string — acessibilidade: leitores de tela anunciam a etapa. Custa 1 linha e melhora o produto.</li>
+<li><code>style={{ width: ... }}</code> — chaves duplas: a externa marca "expressão JS", a interna é o objeto literal. A largura anima graças ao <code>transition: width .4s</code> no CSS.</li>
+</ul>
+
+  <h1 style="font-size:20px;">7. ChatMessage.tsx — bolha de mensagem</h1>
+<pre><code><span class="kw">export function</span> <span class="fn">ChatMessage</span>({ message }: ChatMessageProps) {
+  <span class="kw">const</span> isBot = message.from === <span class="st">'bot'</span>;
+
+  <span class="kw">return</span> (
+    &lt;div className={<span class="st">`chat-message ${isBot ? 'chat-message--bot' : 'chat-message--user'}`</span>}&gt;
+      {isBot &amp;&amp; &lt;span className=<span class="st">"chat-message__avatar"</span>&gt;A&lt;/span&gt;}
+      &lt;div className=<span class="st">"chat-message__bubble"</span>&gt;
+        {message.text.split(<span class="st">'\n'</span>).map((line, index) =&gt; (
+          &lt;p key={index}&gt;{line || <span class="st">'\u00A0'</span>}&lt;/p&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+<ul>
+<li><b>Renderização condicional:</b> <code>{isBot &amp;&amp; ...}</code> — se for mensagem do usuário, nem renderiza avatar (o CSS alinha à direita com <code>flex-direction: row-reverse</code>).</li>
+<li><b>Split por \n:</b> as perguntas têm quebras de linha. JSX ignora <code>\n</code>, então transformamos cada linha em parágrafo. Padrão importante para qualquer texto multilinha em React.</li>
+<li><code>{line || '\u00A0'}</code> — linha vazia vira espaço não-quebrável (nbsp), senão o parágrafo colapsa e o espaçamento desaparece. Detalhe fino que separa júnior de pleno.</li>
+<li><b>key={index}:</b> aceitável aqui porque a lista nunca reordena. Em listas mutáveis use IDs estáveis.</li>
+</ul>
+
+<div class="box"><b class="label">Erro comum de júnior</b>
+Colocar <code>dangerouslySetInnerHTML</code> para resolver quebras de linha. Isso abre brecha XSS quando o texto vem do usuário. Transformar em elementos seguros (como fizemos) é o caminho certo.</div>
+</div>
+
+<!-- ================= CAP 8 ================= -->
+<div class="page">
+  <h1>8. TypingIndicator.tsx — "digitando..."</h1>
+<pre><code><span class="kw">export function</span> <span class="fn">TypingIndicator</span>() {
+  <span class="kw">return</span> (
+    &lt;div className=<span class="st">"chat-message chat-message--bot"</span>&gt;
+      &lt;span className=<span class="st">"chat-message__avatar"</span>&gt;A&lt;/span&gt;
+      &lt;div className=<span class="st">"chat-message__bubble typing"</span> aria-label=<span class="st">"Assistente digitando"</span>&gt;
+        &lt;span className=<span class="st">"typing__dot"</span> /&gt;
+        &lt;span className=<span class="st">"typing__dot"</span> /&gt;
+        &lt;span className=<span class="st">"typing__dot"</span> /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+<ul>
+<li>Reaproveita as classes de <code>chat-message--bot</code> para ficar visualmente idêntico a uma mensagem — só o conteúdo muda (pontinhos).</li>
+<li>A animação é 100% CSS (<code>@keyframes typing-bounce</code> com delays escalonados via <code>:nth-child</code>). Zero JS: mais performático.</li>
+<li>Quem decide mostrar/esconder é o App, via estado <code>isTyping</code>. O componente é burro de propósito (apresentação pura).</li>
+</ul>
+
+  <h1 style="font-size:20px;">9. SuggestionChips.tsx — sugestões clicáveis</h1>
+<pre><code><span class="kw">export function</span> <span class="fn">SuggestionChips</span>({ suggestions, optional, onPick }: SuggestionChipsProps) {
+  <span class="kw">if</span> (suggestions.length === 0 &amp;&amp; !optional) <span class="kw">return null</span>;
+  <span class="cm">// Early return: componente decide sozinho quando não deve existir.</span>
+  <span class="cm">// return null é a forma idiomática de "renderize nada".</span>
+
+  <span class="kw">return</span> (
+    &lt;div className=<span class="st">"suggestion-chips"</span>&gt;
+      {suggestions.map((text) =&gt; (
+        &lt;button key={text} type=<span class="st">"button"</span> onClick={() =&gt; onPick(text)}&gt;{text}&lt;/button&gt;
+      ))}
+      {optional &amp;&amp; (
+        &lt;button className=<span class="st">"chip--skip"</span> onClick={() =&gt; onPick(SKIP_VALUE)}&gt;
+          Pular esta etapa
+        &lt;/button&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+<ul>
+<li><code>type="button"</code> — SEMPRE em botões dentro de forms no React. O default é <code>submit</code>, e um clique num chip dispararia o submit do formulário vizinho... na verdade chips estão fora do form, mas o hábito evita surpresas quando alguém mover o JSX.</li>
+<li><code>onPick(SKIP_VALUE)</code> — o chip de pular envia o valor-sentinela. Quem sabe o que fazer com ele é o App (único dono da lógica). Isso mantém o componente reutilizável.</li>
+<li><b>Inversão de controle:</b> o componente NÃO avança etapas, NÃO salva nada. Ele apenas grita "o usuário escolheu X". O pai decide. Esse desenho torna testes triviais.</li>
+</ul>
+</div>
+
+<!-- ================= CAP 10 ================= -->
+<div class="page">
+  <h1>10. ChatInput.tsx — campo de digitação</h1>
+<pre><code>&lt;form onSubmit={(event) =&gt; {
+  event.preventDefault();  <span class="cm">// impede reload da página (comportamento default do form)</span>
+  onSend();
+}}&gt;
+  &lt;input
+    value={value}                       <span class="cm">// componente CONTROLADO: o valor vem do pai</span>
+    onChange={(e) =&gt; onChange(e.target.value)}  <span class="cm">// ...e cada tecla sobe pro pai</span>
+    disabled={disabled}
+    placeholder={placeholder}
+    aria-label=<span class="st">"Sua resposta"</span>
+  /&gt;
+  &lt;button type=<span class="st">"submit"</span> disabled={disabled || value.trim() === <span class="st">''</span>}&gt;...&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+<h4>O conceito mais importante deste arquivo: Controlled Component</h4>
+<p>No React, o input tem DUAS fontes de verdade possíveis: o DOM interno dele, ou o seu estado.
+Escolhemos o estado: o valor exibido é <code>value={value}</code> (que veio de <code>draft</code> no App) e cada
+tecla chama <code>onChange</code>, que atualiza o estado, que redesenha o input. Ciclo fechado.</p>
+
+<ul>
+<li><b>Por que o estado mora no App e não no input?</b> Porque o botão "enviar" do App precisa LER o texto. Estado sempre no ancestral comum de quem lê e quem mostra. Isso é "lifting state up".</li>
+<li><code>disabled || value.trim() === ''</code> — botão desliga quando vazio ou quando o bot está digitando. <code>.trim()</code> impede enviar só espaços.</li>
+<li>O botão de enviar é um SVG inline (seta) em vez de emoji: consistência entre sistemas operacionais.</li>
+<li>Enter no input submete automaticamente porque estamos dentro de um <code>&lt;form&gt;</code> com botão submit — de graça, sem JS extra.</li>
+</ul>
+
+<div class="box"><b class="label">Erro comum de júnior</b>
+Guardar o texto num <code>useRef</code> ou ler <code>e.target.value</code> direto no send. Funciona até o dia em que
+você precisa limpar o campo programaticamente ou desabilitar o botão conforme o conteúdo. Com controlled component, isso é uma linha.</div>
+
+  <h1 style="font-size:20px;">11. SummaryCard.tsx — resumo + download</h1>
+<pre><code><span class="kw">function</span> <span class="fn">buildResumeText</span>(resume: ResumeData): string {
+  <span class="kw">const</span> lines = FIELD_LABELS.map(({ key, label }) =&gt;
+    `${label}: ${resume[key] || <span class="st">'(nao informado)'</span>}`);
+  <span class="kw">return</span> [<span class="st">'CURRICULO - ALFA CURRICULUM MAKER'</span>, <span class="st">'====='</span>, <span class="st">''</span>, ...lines].join(<span class="st">'\n'</span>);
+}
+
+<span class="kw">function</span> <span class="fn">downloadResume</span>(resume: ResumeData) {
+  <span class="kw">const</span> blob = <span class="kw">new</span> <span class="fn">Blob</span>([buildResumeText(resume)], { type: <span class="st">'text/plain;charset=utf-8'</span> });
+  <span class="kw">const</span> url = URL.<span class="fn">createObjectURL</span>(blob);   <span class="cm">// gera endereço temporário na memória</span>
+  <span class="kw">const</span> anchor = document.<span class="fn">createElement</span>(<span class="st">'a'</span>); <span class="cm">// âncora fantasma</span>
+  anchor.href = url;
+  anchor.download = <span class="st">'curriculo-alfa.txt'</span>;  <span class="cm">// atributo download força baixar</span>
+  anchor.click();
+  URL.<span class="fn">revokeObjectURL</span>(url);                <span class="cm">// libera memória — SEMPRE faça isso</span>
+}</code></pre>
+<ul>
+<li><code>FIELD_LABELS</code> — array único ligando chave técnica → rótulo humano. Serve tanto para a tela quanto para o arquivo. Uma fonte de verdade.</li>
+<li>Técnica do download: Blob (arquivo em memória) + object URL + âncora invisível. É o padrão universal de download client-side, sem backend.</li>
+<li>Funções auxiliares FORA do componente: não dependem de estado, então não precisam ser recriadas a cada render.</li>
+<li>Campos vazios exibem "Não informado" — o <code>||</code> trata string vazia como falsy.</li>
+</ul>
+</div>
+
+<!-- ================= CAP 12 ================= -->
+<div class="page">
+  <h1>12. App.tsx — o cérebro do chat</h1>
+<p>Este é o arquivo que amarra tudo. Leia com calma: cada linha está comentada.</p>
+
+<h4>a) Estado e refs</h4>
+<pre><code><span class="kw">const</span> [messages, setMessages] = useState&lt;<span class="ty">Message</span>[]&gt;(() =&gt; [
+  { id: 0, from: <span class="st">'bot'</span>, text: WELCOME_MESSAGE },
+]);
+<span class="cm">// Initializer LAZY: a função roda UMA vez, na criação.</span>
+<span class="cm">// Por quê assim e não useEffect? O React 18+/StrictMode executa efeitos 2x em dev,</span>
+<span class="cm">// o que duplicaria a mensagem de boas-vindas. Estado inicial não sofre desse mal.</span>
+
+<span class="kw">const</span> [stepIndex, setStepIndex] = useState(0);   <span class="cm">// qual pergunta está ativa</span>
+<span class="kw">const</span> [resume, setResume] = useState&lt;<span class="ty">ResumeData</span>&gt;(EMPTY_RESUME); <span class="cm">// respostas</span>
+<span class="kw">const</span> [isTyping, setIsTyping] = useState(false); <span class="cm">// mostra indicador "digitando"</span>
+<span class="kw">const</span> [draft, setDraft] = useState(<span class="st">''</span>);          <span class="cm">// texto sendo digitado agora</span>
+
+<span class="kw">const</span> nextIdRef = useRef(1);   <span class="cm">// contador de IDs (não causa re-render)</span>
+<span class="kw">const</span> timerRef = useRef&lt;number | null&gt;(null); <span class="cm">// guarda o setTimeout ativo</span>
+<span class="kw">const</span> bottomRef = useRef&lt;<span class="ty">HTMLDivElement</span> | null&gt;(null); <span class="cm">// aponta pro fim da lista</span></code></pre>
+
+<div class="box"><b class="label">Quando usar ref em vez de state?</b>
+Estado (<code>useState</code>) = dado que aparece na tela; mudou → re-renderiza.
+Ref (<code>useRef</code>) = dado que o render não enxerga (IDs, timers, elementos DOM).
+Se colocasse o contador de ID em useState, teria renders desnecessários e risco de loop.</div>
+
+<h4>b) Funções centrais</h4>
+<pre><code><span class="kw">function</span> <span class="fn">pushMessage</span>(from, text) {
+  setMessages((current) =&gt; [...current, { id: nextIdRef.current, from, text }]);
+  <span class="cm">// Spread + novo item = IMUTABILIDADE. Nunca faça messages.push()!</span>
+  <span class="cm">// O React compara referências: array novo → detectou mudança → re-render.</span>
+  nextIdRef.current += 1;
+}
+
+<span class="kw">function</span> <span class="fn">botSay</span>(text: string) {
+  setIsTyping(true);                    <span class="cm">// pontinhos aparecem</span>
+  timerRef.current = window.setTimeout(() =&gt; {
+    setIsTyping(false);                 <span class="cm">// pontinhos saem</span>
+    pushMessage(<span class="st">'bot'</span>, text);          <span class="cm">// resposta chega</span>
+  }, BOT_DELAY_MS);                     <span class="cm">// 900ms: parece que ele "digita"</span>
+}</code></pre>
+
+<h4>c) Envio de mensagem (a transição de estados)</h4>
+<pre><code><span class="kw">function</span> <span class="fn">handleSend</span>(rawText: string) {
+  <span class="kw">const</span> isSkip = rawText === SKIP_VALUE;
+  <span class="kw">const</span> text = isSkip ? <span class="st">'Pular esta etapa'</span> : rawText.trim();
+  <span class="kw">if</span> (text === <span class="st">''</span> || !currentStep || finished || isTyping) <span class="kw">return</span>;
+  <span class="cm">// GUARDA DE SEGURANÇA: bloqueia cliques duplos e envios fora de hora.</span>
+
+  pushMessage(<span class="st">'user'</span>, text);
+  setResume((prev) =&gt; ({ ...prev, [currentStep.id]: isSkip ? <span class="st">''</span> : rawText.trim() }));
+  <span class="cm">// [currentStep.id] = computed property: grava no campo CERTO do resume</span>
+  <span class="cm">// (fullName na etapa 1, contact na etapa 4...) sem if/switch gigante.</span>
+
+  <span class="kw">const</span> nextQuestion = stepIndex + 1 &lt; STEPS.length
+    ? STEPS[stepIndex + 1].question
+    : FINISH_MESSAGE;
+  setStepIndex((index) =&gt; index + 1);
+  setDraft(<span class="st">''</span>);          <span class="cm">// limpa o input</span>
+  <span class="fn">botSay</span>(nextQuestion);  <span class="cm">// assistente pergunta a próxima</span>
+}</code></pre>
+
+<h4>d) Efeitos: início e auto-scroll</h4>
+<pre><code>useEffect(() =&gt; {
+  <span class="kw">if</span> (didStartRef.current) <span class="kw">return</span>;  <span class="cm">// guard contra StrictMode rodar 2x em dev</span>
+  didStartRef.current = true;
+  timerRef.current = setTimeout(() =&gt; pushMessage(<span class="st">'bot'</span>, STEPS[0].question), BOT_DELAY_MS);
+  <span class="kw">return</span> () =&gt; clearTimeout(timerRef.current); <span class="cm">// cleanup: cancela timer se o App sumir</span>
+}, []);  <span class="cm">// [] = roda só após a primeira montagem</span>
+
+useEffect(() =&gt; {
+  bottomRef.current?.scrollIntoView({ behavior: <span class="st">'smooth'</span> });
+  <span class="cm">// ?. = optional chaining: se a ref ainda não existe, não explode.</span>
+}, [messages, isTyping]);  <span class="cm">// roda sempre que mensagens/typing mudam</span></code></pre>
+
+<div class="box"><b class="label">O fluxo completo em diagrama</b>
+<pre style="background:#1a1a1a;">
+usuário digita ──▶ ChatInput.onChange ──▶ setDraft (estado sobe pro App)
+Enter/clique  ──▶ handleSend(draft)
+                   ├─ pushMessage('user')      ▶ mensagem entra no chat
+                   ├─ setResume({campo: resp}) ▶ resposta arquivada
+                   ├─ setStepIndex(i+1)        ▶ avança etapa
+                   └─ botSay(proxima)          ▶ isTyping=true → 900ms → pergunta nova
+última etapa? ──▶ stepIndex >= STEPS.length ──▶ finished=true ──▶ SummaryCard renderiza</pre></div>
+
+<h4>e) Reinício limpo</h4>
+<pre><code><span class="kw">function</span> handleRestart() {
+  <span class="kw">if</span> (timerRef.current !== null) clearTimeout(timerRef.current); <span class="cm">// mata timer pendente</span>
+  setMessages([]); nextIdRef.current = 1;  <span class="cm">// zera histórico E o contador</span>
+  setStepIndex(0); setResume(EMPTY_RESUME); setIsTyping(false); setDraft('');
+  pushMessage(<span class="st">'bot'</span>, WELCOME_MESSAGE);    <span class="cm">// recomeça a conversa</span>
+}</code></pre>
+<p>Repare: reiniciar é literalmente voltar os estados aos valores iniciais. Quando seu app é
+<b>função do estado</b>, reset é trivial. Essa é a recompensa do design correto.</p>
+</div>
+
+<!-- ================= CAP 13 ================= -->
+<div class="page">
+  <h1>13. CSS: o tema vermelho sangue</h1>
+<h4>index.css — variáveis e reset</h4>
+<pre><code>:root {
+  --bg-900: #12040a;      <span class="cm">// quase-preto arroxeado: base do fundo</span>
+  --bg-800: #1d060d;
+  --surface: #260810;     <span class="cm">// superfícies (painéis, inputs)</span>
+  --surface-2: #320b16;   <span class="cm">// superfície hover/bolha do bot</span>
+  --border-red: #54121f;  <span class="cm">// bordas discretas</span>
+  --red-blood: #8a0f1e;   <span class="cm">// vermelho sangue principal</span>
+  --red-bright: #c1121f;  <span class="cm">// vermelho vivo (gradientes, CTA)</span>
+  --red-glow: #ff4d5e;    <span class="cm">// brilho/hover — dá o "neon sangue"</span>
+  --text-main: #f9eeec;   <span class="cm">// branco levemente rosado (menos agressivo que #fff)</span>
+  --text-muted: #d5a3aa;  <span class="cm">// texto secundário rosado</span>
+}
+body {
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -10%, rgba(193,18,31,.35), transparent),
+    radial-gradient(ellipse 70% 50% at 100% 110%, rgba(138,15,30,.28), transparent),
+    linear-gradient(var(--bg-800), var(--bg-900));
+  <span class="cm">// 3 camadas empilhadas: dois halos de luz vermelha + gradiente vertical.</span>
+  <span class="cm">// rgba(...) com transparência deixa o brilho suave em vez de mancha chapada.</span>
+}</code></pre>
+<ul>
+<li><b>Variáveis CSS (<code>--nome</code>):</b> mudou a cor em UM lugar, mudou no app inteiro. Quer uma versão "Halloween"? Troque 3 variáveis.</li>
+<li><b>Escalas 800/900:</b> convenção emprestada de design systems (tons de escuro para claro).</li>
+</ul>
+
+<h4>Padrões de layout usados</h4>
+<table>
+  <tr><th>Trecho</th><th>O que faz</th><th>Por quê</th></tr>
+  <tr><td><code>.app { height:100%; max-width:860px; margin:0 auto }</code></td><td>App ocupa a altura toda, centrado, largura máxima</td><td>Chat precisa de coluna fixa; 860px é confortável para leitura</td></tr>
+  <tr><td><code>.chat { flex:1; min-height:0 }</code></td><td>Área de mensagens cresce e encolhe</td><td><code>min-height:0</code> é O detalhe que faz overflow funcionar em flex children — esqueça isso e o scroll vaza da tela</td></tr>
+  <tr><td><code>.chat-message--user { align-self:flex-end }</code></td><td>Mensagens do usuário à direita</td><td>Padrão universal de apps de mensagem (WhatsApp-like)</td></tr>
+  <tr><td>bordas assimétricas (<code>border-bottom-left-radius:4px</code>)</td><td>"Rabinho" na bolha</td><td>Direção visual de quem fala</td></tr>
+</table>
+
+<h4>Animação dos pontinhos</h4>
+<pre><code>.typing__dot { animation: typing-bounce 1s infinite ease-in-out; }
+.typing__dot:nth-child(2) { animation-delay: .15s; }  <span class="cm">// cada ponto atrasa um pouco</span>
+.typing__dot:nth-child(3) { animation-delay: .30s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0);    opacity:.4; } <span class="cm">// repouso</span>
+  30%           { transform: translateY(-5px); opacity:1;  } <span class="cm">// pico do pulo</span>
+}</code></pre>
+<p>Delays escalonados criam a onda. Animação em <code>transform/opacity</code> é acelerada por GPU —
+nunca anime <code>top/left</code>.</p>
+
+<div class="box"><b class="label">Acessibilidade incluída</b>
+<code>aria-label</code> no progresso, no input e no indicador; <code>:focus-within</code> ilumina o input
+(quem navega por teclado sabe onde está); contraste dos textos validado sobre o fundo escuro.</div>
+</div>
+
+<!-- ================= CAP 14 ================= -->
+<div class="page">
+  <h1>14. Rodar, buildar e validar</h1>
+<pre><code>npm run dev      <span class="cm"># http://localhost:5173 — desenvolva aqui</span>
+npm run lint     <span class="cm"># oxlint analisa o código</span>
+npm run build    <span class="cm"># tsc valida tipos + Vite gera dist/</span>
+npm run preview  <span class="cm"># testa o build final localmente</span></code></pre>
+
+<h4>Checklist de teste manual (faça sempre que mexer)</h4>
+<ul>
+<li>Responder digitando texto livre em todas as etapas</li>
+<li>Clicar em cada chip de sugestão</li>
+<li>Usar "Pular esta etapa" em idiomas → o resumo mostra "Não informado"</li>
+<li>Tentar enviar mensagem vazia → botão desabilitado</li>
+<li>Clicar "Baixar currículo (.txt)" → arquivo sai com os dados</li>
+<li>Clicar "Recomeçar" → chat volta ao zero sem mensagens órfãs</li>
+<li>Redimensionar a janela para celular (DevTools F12) → layout empilha</li>
+</ul>
+
+<div class="box"><b class="label">Dica de depuração</b>
+Instale a extensão <b>React Developer Tools</b> no navegador. Ela mostra a árvore de componentes
+e os valores de <code>messages</code>, <code>stepIndex</code> e <code>resume</code> EM TEMPO REAL.
+Ver o estado mudando é a melhor forma de entender o fluxo.</div>
+</div>
+
+<!-- ================= CAP 15 ================= -->
+<div class="page">
+  <h1>15. Próximos passos (ordem sugerida)</h1>
+
+<h4>1. Gerar PDF real (em vez de .txt)</h4>
+<pre><code>npm install jspdf
+<span class="cm">// dentro do SummaryCard:</span>
+<span class="kw">import</span> { jsPDF } <span class="kw">from</span> <span class="st">'jspdf'</span>;
+<span class="kw">const</span> doc = <span class="kw">new</span> <span class="fn">jsPDF</span>();
+doc.text(buildResumeText(resume), 10, 10);
+doc.save(<span class="st">'curriculo-alfa.pdf'</span>);</code></pre>
+<p><b>Por quê jsPDF?</b> Roda 100% no navegador, sem backend. Quando o design do PDF precisar ser rico
+(cores, colunas), avalie <code>@react-pdf/renderer</code>, que monta o PDF como componentes React.</p>
+
+<h4>2. Conectar num backend real (substituir a "IA local")</h4>
+<pre><code><span class="cm">// hoje: botSay(nextQuestion) responde localmente</span>
+<span class="cm">// amanhã: envie as respostas e receba as perguntas de uma API:</span>
+<span class="kw">async function</span> <span class="fn">askAssistant</span>(resume: ResumeData) {
+  <span class="kw">const</span> response = <span class="kw">await</span> fetch(<span class="st">'/api/chat'</span>, {
+    method: <span class="st">'POST'</span>,
+    headers: { <span class="st">'Content-Type'</span>: <span class="st">'application/json'</span> },
+    body: JSON.stringify(resume),
+  });
+  <span class="kw">if</span> (!response.ok) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="st">'Falha na API'</span>);
+  <span class="kw">return</span> (await response.json()).message <span class="kw">as</span> string;
+}</code></pre>
+<ul>
+<li>Guarde a URL da API em variável de ambiente: crie <code>.env</code> com <code>VITE_API_URL=...</code> e leia com <code>import.meta.env.VITE_API_URL</code>. Variáveis precisam do prefixo <code>VITE_</code> para serem expostas.</li>
+<li>Trate loading e erro: mostre "Não consegui falar com o servidor, tente de novo" em vez de congelar o chat.</li>
+</ul>
+
+<h4>3. Salvar rascunho no localStorage</h4>
+<pre><code>useEffect(() =&gt; {
+  localStorage.setItem(<span class="st">'alfa-resume-draft'</span>, JSON.stringify({ resume, stepIndex }));
+}, [resume, stepIndex]);
+<span class="cm">// na inicialização, leia e restaure — usuário fecha a aba e não perde nada.</span></code></pre>
+
+<h4>4. Testes automatizados</h4>
+<p>Instale Vitest + Testing Library. Primeiro teste sugerido: renderizar o App, digitar um nome,
+pressionar Enter e verificar que a segunda pergunta aparece. Depois: chip de pular, restart, download mockado.
+Testes de fluxo de estado são os que mais protegem este tipo de app.</p>
+
+<h4>5. Refino visual do currículo</h4>
+<p>Hoje o layout é uma preferência coletada (<code>layout</code>). Pleno: renderize 3 previews diferentes
+na SummaryCard aplicando classes condicionais (<code>summary-card--classic/modern/minimal</code>).</p>
+</div>
+
+<!-- ================= CAP 16 ================= -->
+<div class="page">
+  <h1>16. Glossário essencial</h1>
+<table>
+  <tr><th>Termo</th><th>Tradução para júnior</th></tr>
+  <tr><td><code>Componente</code></td><td>Função que retorna tela (JSX) e reage às suas props. Como LEGO: peças combinam formam a página.</td></tr>
+  <tr><td><code>Props</code></td><td>Parâmetros do componente. Só descem (pai → filho). Filho comunica-se subindo callbacks (ex.: <code>onPick</code>).</td></tr>
+  <tr><td><code>useState</code></td><td>Memória do componente entre renders. Retorna [valor, setter]. Setter agenda novo render.</td></tr>
+  <tr><td><code>useEffect</code></td><td>"Depois de renderizar, execute isto". Array de deps controla QUANDO: <code>[]</code> = só na montagem; com deps = quando elas mudarem.</td></tr>
+  <tr><td><code>useRef</code></td><td>Caixinha mutável que sobrevive aos renders sem disparar nenhum. Para IDs, timers e elementos DOM.</td></tr>
+  <tr><td><code>Imutabilidade</code></td><td>Nunca altere array/objeto de estado no lugar. Crie cópia: spread <code>[...lista]</code> / <code>{...obj}</code>.</td></tr>
+  <tr><td><code>Union type</code></td><td><code>'a' | 'b'</code>: o valor só pode ser um desses. TS reclama se vier outra coisa.</td></tr>
+  <tr><td><code>keyof</code></td><td>Transforma as chaves de uma interface num union de nomes de campos.</td></tr>
+  <tr><td><code>Optional chaining (?.)</code></td><td><code>a?.b</code> = se <code>a</code> existir, acesse <code>b</code>; senão retorne undefined sem erro.</td></tr>
+  <tr><td><code>Computed property</code></td><td><code>{ [chave]: valor }</code>: monta a chave do objeto dinamicamente. Base do <code>setResume</code> genérico.</td></tr>
+  <tr><td><code>Controlled component</code></td><td>Input cujo valor vem do estado e volta pra ele no onChange. Única fonte de verdade: o estado.</td></tr>
+  <tr><td><code>StrictMode</code></td><td>Modo de desenvolvimento que roda efeitos/render 2x para expor efeitos mal escritos. Não afeta produção.</td></tr>
+  <tr><td><code>SPA</code></td><td>Single Page Application: um HTML só, o JS troca o conteúdo. Nosso <code>index.html</code> nunca recarrega.</td></tr>
+  <tr><td><code>Blob</code></td><td>Dados binários em memória do navegador. Com objectURL + tag <code>&lt;a download&gt;</code>, vira arquivo baixável.</td></tr>
+  <tr><td><code>Early return</code></td><td>Sair da função no começo quando algo invalida (<code>if (!ok) return</code>). Reduz aninhamento e aumenta legibilidade.</td></tr>
+</table>
+
+  <div class="box"><b class="label">Palavras finais do professor</b>
+  Você acabou de ler a anatomia completa de um app React real. Os três pilares que sustentam este projeto são
+  os mesmos de qualquer app grande: <b>(1) estado mínimo e bem localizado</b>, <b>(2) dados separados da
+  apresentação</b>, <b>(3) componentes burros + um cérebro esperto</b>. Domine esses três e frameworks
+  viram detalhe. Agora abra o terminal, rode <code>npm run dev</code>, quebre algo de propósito e conserte.
+  É assim que se aprende de verdade.</div>
+</div>
+
+</body>
+</html>
