@@ -2,11 +2,13 @@ interface ChatInputProps {
   value: string;
   placeholder: string;
   disabled: boolean;
+  canGoBack: boolean;
+  onBack: () => void;
   onChange: (value: string) => void;
   onSend: () => void;
 }
 
-export function ChatInput({ value, placeholder, disabled, onChange, onSend }: ChatInputProps) {
+export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onChange, onSend }: ChatInputProps) {
   return (
     <form
       className="chat-input"
@@ -15,6 +17,16 @@ export function ChatInput({ value, placeholder, disabled, onChange, onSend }: Ch
         onSend();
       }}
     >
+      <button
+        className="chat-input__back"
+        type="button"
+        onClick={onBack}
+        disabled={!canGoBack}
+        aria-label="Voltar etapa anterior"
+        title="Voltar etapa"
+      >
+        ←
+      </button>
       <input
         className="chat-input__field"
         type="text"

@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { ResumeData } from '../types';
 import {
+  accentRgb,
   buildSections,
   classifyContactPart,
   orderedContactParts,
@@ -8,6 +9,7 @@ import {
   getTemplateId,
   initialsOf,
   saveBlob,
+  shadeRgb,
   type ResumeSection,
 } from './resumeContent';
 
@@ -17,7 +19,6 @@ const PAGE_H = 297;
 type RGB = [number, number, number];
 
 const BLOOD: RGB = [179, 18, 31];
-const DARK_RED: RGB = [95, 10, 18];
 const INK: RGB = [34, 20, 22];
 const BODY: RGB = [55, 45, 47];
 const MUTED: RGB = [110, 95, 97];
@@ -324,6 +325,7 @@ function renderAts(doc: jsPDF, resume: ResumeData): void {
 /* ---------- XYZ (padrão Sofia) ---------- */
 
 function renderXyz(doc: jsPDF, resume: ResumeData): void {
+  const headColor = accentRgb(resume, DARK2);
   const marginX = 18;
   const contentW = PAGE_W - marginX * 2;
   const cursor: Cursor = { doc, y: 22 };
@@ -332,7 +334,7 @@ function renderXyz(doc: jsPDF, resume: ResumeData): void {
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
-  doc.setTextColor(...DARK2);
+  doc.setTextColor(...headColor);
   doc.text((resume.fullName || 'Nome não informado').toUpperCase(), PAGE_W / 2, cursor.y, { align: 'center' });
   cursor.y += 6;
 
@@ -354,32 +356,32 @@ function renderXyz(doc: jsPDF, resume: ResumeData): void {
   cursor.y += 8;
 
   if (resume.summary.trim()) {
-    drawHeading(cursor, 'Perfil Profissional', marginX, contentW, DARK2, { centered: true, size: 12 });
+    drawHeading(cursor, 'Perfil Profissional', marginX, contentW, headColor, { centered: true, size: 12 });
     drawParagraph(cursor, resume.summary.trim(), marginX, contentW, BODY, { align: 'justify', size: 9.5 });
     cursor.y += 2;
   }
 
   const education = find('Formação Acadêmica');
   if (education) {
-    drawHeading(cursor, 'Formação Acadêmica', marginX, contentW, DARK2, { size: 12 });
-    drawColumns(cursor, education.items, marginX, contentW, 2, DARK2, { size: 9.5, bold: true });
+    drawHeading(cursor, 'Formação Acadêmica', marginX, contentW, headColor, { size: 12 });
+    drawColumns(cursor, education.items, marginX, contentW, 2, headColor, { size: 9.5, bold: true });
   }
 
   const experience = find('Experiência Profissional');
   if (experience) {
-    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, DARK2, { size: 12 });
-    drawBullets(cursor, experience.items, marginX, contentW, BODY, DARK2, { size: 9.5 });
+    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, headColor, { size: 12 });
+    drawBullets(cursor, experience.items, marginX, contentW, BODY, headColor, { size: 9.5 });
   }
 
   const skills = find('Habilidades');
   if (skills) {
-    drawHeading(cursor, 'Habilidades', marginX, contentW, DARK2, { size: 12 });
+    drawHeading(cursor, 'Habilidades', marginX, contentW, headColor, { size: 12 });
     drawColumns(cursor, skills.items, marginX, contentW, 3, BODY, { size: 9.5, dot: '•' });
   }
 
   const languages = find('Idiomas');
   if (languages) {
-    drawHeading(cursor, 'Idiomas', marginX, contentW, DARK2, { size: 12 });
+    drawHeading(cursor, 'Idiomas', marginX, contentW, headColor, { size: 12 });
     drawColumns(cursor, languages.items, marginX, contentW, Math.min(languages.items.length, 3), BODY, { size: 9.5 });
   }
 }
@@ -387,10 +389,12 @@ function renderXyz(doc: jsPDF, resume: ResumeData): void {
 /* ---------- MODERNO (padrão Marina, marca vermelha) ---------- */
 
 function renderCanva(doc: jsPDF, resume: ResumeData): void {
+  const accent = accentRgb(resume, BLOOD);
+  const sidebarColor = shadeRgb(accent, 0.45);
   const sidebarW = 70;
-  doc.setFillColor(...DARK_RED);
+  doc.setFillColor(...sidebarColor);
   doc.rect(0, 0, sidebarW, PAGE_H, 'F');
-  doc.setFillColor(...BLOOD);
+  doc.setFillColor(...accent);
   doc.rect(0, 0, sidebarW, 46, 'F');
 
   const cursor: Cursor = { doc, y: 0 };
@@ -472,19 +476,19 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11.5);
-  doc.setTextColor(...BLOOD);
+  doc.setTextColor(...accent);
   doc.text(resume.targetRole || '', mainX, main.y);
   main.y += 8;
 
   const mainHeading = (title: string) => {
     ensureSpace(main, 14);
-    doc.setDrawColor(...BLOOD);
+    doc.setDrawColor(...accent);
     doc.setLineWidth(1);
     doc.line(mainX, main.y, mainX + mainW, main.y);
     main.y += 5.5;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.setTextColor(...BLOOD);
+    doc.setTextColor(...accent);
     doc.text(title.toUpperCase(), mainX, main.y);
     main.y += 7;
   };
@@ -497,7 +501,7 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   const experience = sections.find((section) => section.title === 'Experiência Profissional');
   if (experience) {
     mainHeading('Experiência Profissional');
-    drawBullets(main, experience.items, mainX, mainW, BODY, BLOOD, { size: 10 });
+    drawBullets(main, experience.items, mainX, mainW, BODY, accent, { size: 10 });
   }
 
   const education = sections.find((section) => section.title === 'Formação Acadêmica');
@@ -523,6 +527,7 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
 /* ---------- EXECUTIVO (faixa azul-acinzentada) ---------- */
 
 function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
+  const headColor = accentRgb(resume, SLATE_HEAD);
   doc.setFillColor(...SLATE);
   doc.rect(0, 0, PAGE_W, 54, 'F');
 
@@ -547,10 +552,10 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
     sideY += 3;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(...SLATE_HEAD);
+    doc.setTextColor(...headColor);
     doc.text(title.toUpperCase(), sideX, sideY);
     sideY += 1.8;
-    doc.setDrawColor(...SLATE_HEAD);
+    doc.setDrawColor(...headColor);
     doc.setLineWidth(0.5);
     doc.line(sideX, sideY, sideX + sideW, sideY);
     sideY += 5.5;
@@ -587,7 +592,7 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
     for (const skill of skills.items) {
       const lines = doc.splitTextToSize(skill, sideW - 4) as string[];
       ensureSpace(cursor, lines.length * 4.6, 60);
-      doc.setFillColor(...SLATE_HEAD);
+      doc.setFillColor(...headColor);
       doc.rect(sideX, sideY - 2.3, 1.8, 1.8, 'F');
       doc.setTextColor(...BODY);
       lines.forEach((line, index) => doc.text(line, sideX + 4, sideY + index * 4.6));
@@ -603,7 +608,7 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
     ensureSpace(main, 14);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12.5);
-    doc.setTextColor(...SLATE_HEAD);
+    doc.setTextColor(...headColor);
     doc.text(title.toUpperCase(), mainX, main.y);
     main.y += 2;
     doc.setDrawColor(...LIGHT_BLUE);
@@ -620,7 +625,7 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
   const experience = sections.find((section) => section.title === 'Experiência Profissional');
   if (experience) {
     mainHeading('Experiência Profissional');
-    drawBullets(main, experience.items, mainX, mainW, BODY, SLATE, { size: 10 });
+    drawBullets(main, experience.items, mainX, mainW, BODY, headColor, { size: 10 });
   }
 
   const education = sections.find((section) => section.title === 'Formação Acadêmica');
@@ -633,19 +638,20 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
 /* ---------- CLEAN (serif elegante) ---------- */
 
 function renderClean(doc: jsPDF, resume: ResumeData): void {
+  const accent = accentRgb(resume, TEAL);
   const marginX = 16;
   const cursor: Cursor = { doc, y: 20 };
 
   if (resume.photo) {
     doc.addImage(resume.photo, 'PNG', PAGE_W - marginX - 40, 14, 40, 53.3);
-    doc.setDrawColor(...TEAL);
+    doc.setDrawColor(...accent);
     doc.setLineWidth(1);
     doc.roundedRect(PAGE_W - marginX - 41, 13, 42, 55.3, 4, 4, 'S');
   }
 
   doc.setFont('times', 'bolditalic');
   doc.setFontSize(28);
-  doc.setTextColor(...TEAL);
+  doc.setTextColor(...accent);
   doc.text(resume.fullName || 'Nome não informado', marginX, cursor.y + 8);
   cursor.y += 15;
 
@@ -669,7 +675,7 @@ function renderClean(doc: jsPDF, resume: ResumeData): void {
     ensureSpace(cursor, 12);
     doc.setFont('times', 'bolditalic');
     doc.setFontSize(16);
-    doc.setTextColor(...TEAL);
+    doc.setTextColor(...accent);
     doc.text(title, marginX, cursor.y);
     cursor.y += 6.5;
   };
@@ -695,7 +701,7 @@ function renderClean(doc: jsPDF, resume: ResumeData): void {
   const experience = find('Experiência Profissional');
   if (experience) {
     cleanHeading('Experiência Profissional');
-    drawBullets(cursor, experience.items, marginX, PAGE_W - marginX * 2, BODY, TEAL, { font: 'times', size: 11 });
+    drawBullets(cursor, experience.items, marginX, PAGE_W - marginX * 2, BODY, accent, { font: 'times', size: 11 });
     cursor.y += 1;
   }
 

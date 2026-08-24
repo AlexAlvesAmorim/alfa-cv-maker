@@ -14,6 +14,7 @@ import {
 } from 'docx';
 import type { ResumeData } from '../types';
 import {
+  accentHex,
   buildSections,
   classifyContactPart,
   orderedContactParts,
@@ -368,12 +369,12 @@ function buildCanvaDoc(resume: ResumeData): Document {
     rows: [
       new TableRow({
         children: [
-          buildSidebarCell(resume, { fill: DARK_RED }),
+          buildSidebarCell(resume, { fill: accentHex(resume, DARK_RED) }),
           new TableCell({
             margins: { top: 500, bottom: 500, left: 420, right: 420 },
             verticalAlign: VerticalAlign.TOP,
             width: { size: 8106, type: WidthType.DXA },
-            children: buildMainCellChildren(resume, ACCENT, 'EBC4C7'),
+            children: buildMainCellChildren(resume, accentHex(resume, ACCENT), 'EBC4C7'),
           }),
         ],
       }),
@@ -453,7 +454,7 @@ function buildExecutivoDoc(resume: ResumeData): Document {
           new TableCell({
             margins: { top: 400, bottom: 400, left: 420, right: 420 },
             width: { size: 8106, type: WidthType.DXA },
-            children: buildMainCellChildren(resume, SLATE_HEAD, LIGHT_BLUE).slice(1),
+            children: buildMainCellChildren(resume, accentHex(resume, SLATE_HEAD), LIGHT_BLUE).slice(1),
           }),
         ],
       }),
@@ -466,6 +467,7 @@ function buildExecutivoDoc(resume: ResumeData): Document {
 /* ---------- CLEAN (serif elegante) ---------- */
 
 function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
+  const accent = accentHex(resume, TEAL);
   const children: (Paragraph | Table)[] = [];
 
   if (resume.photo) {
@@ -481,7 +483,7 @@ function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
                 width: { size: 6800, type: WidthType.DXA },
                 children: [
                   new Paragraph({
-                    children: [new TextRun({ text: resume.fullName || 'Nome não informado', bold: true, italics: true, size: 56, color: TEAL, font: 'Georgia' })],
+                    children: [new TextRun({ text: resume.fullName || 'Nome não informado', bold: true, italics: true, size: 56, color: accent, font: 'Georgia' })],
                     spacing: { after: 120 },
                   }),
                   ...orderedContactParts(resume.contact).map(
@@ -505,7 +507,7 @@ function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
   } else {
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: resume.fullName || 'Nome não informado', bold: true, italics: true, size: 56, color: TEAL, font: 'Georgia' })],
+        children: [new TextRun({ text: resume.fullName || 'Nome não informado', bold: true, italics: true, size: 56, color: accent, font: 'Georgia' })],
         spacing: { after: 120 },
       }),
     );
@@ -522,12 +524,12 @@ function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
   children.push(dottedSeparator());
 
   if (resume.targetRole.trim()) {
-    children.push(heading('Profissão', TEAL, { italics: true, font: 'Georgia', size: 30 }));
+    children.push(heading('Profissão', accent, { italics: true, font: 'Georgia', size: 30 }));
     children.push(paragraph([run(resume.targetRole.trim(), { font: 'Georgia' })], 140));
   }
 
   if (resume.summary.trim()) {
-    children.push(heading('Qualificação Profissional', TEAL, { italics: true, font: 'Georgia', size: 30 }));
+    children.push(heading('Qualificação Profissional', accent, { italics: true, font: 'Georgia', size: 30 }));
     children.push(paragraph([run(resume.summary.trim(), { font: 'Georgia' })], 140));
   }
 
@@ -540,7 +542,7 @@ function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
     };
     const title = titles[section.title];
     if (!title) continue;
-    children.push(heading(title, TEAL, { italics: true, font: 'Georgia', size: 30 }));
+    children.push(heading(title, accent, { italics: true, font: 'Georgia', size: 30 }));
     if (section.title === 'Habilidades') {
       children.push(paragraph([run(section.items.join('  •  '), { font: 'Georgia' })], 140));
     } else {

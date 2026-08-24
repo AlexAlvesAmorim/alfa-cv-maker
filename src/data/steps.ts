@@ -42,17 +42,12 @@ export const STEPS: ChatStep[] = [
     suggestions: ['(11) 98888-7777 | maria@email.com | São Paulo/SP'],
   },
   {
-    id: 'experience',
+    id: 'experiences',
     question:
-      'Vamos às experiências. Dica de ouro: use a fórmula XYZ do Google — "Conquistei [resultado], medido por [número], fazendo [ação]". Uma experiência por linha.\n\n'
-      + 'Se ainda não tem experiência formal, fale sobre projetos, estágios ou voluntariado.',
-    placeholder: 'Ex.: Reduzi o tempo de carregamento do site em 40%, otimizando imagens e cache...',
-    suggestions: [
-      'Superei a meta de vendas em 25% no semestre, reorganizando o funil de atendimento',
-      'Reduzi o tempo de carregamento do site em 40%, otimizando imagens e cache',
-      'Treinei 5 novos colegas, reduzindo o tempo de integração em 1 semana',
-      'Ainda não tenho experiência formal',
-    ],
+      'Vamos às experiências! Preencha o formulário abaixo (cargo, empresa, período e conquista).\n\n'
+      + 'Dica de ouro — fórmula XYZ do Google: na conquista, escreva "Conquistei [resultado], medido por [número], fazendo [ação]".',
+    placeholder: 'Use o formulário acima...',
+    suggestions: [],
   },
   {
     id: 'targetRole',

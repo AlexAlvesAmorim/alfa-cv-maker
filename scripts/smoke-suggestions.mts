@@ -36,10 +36,20 @@ const salesResume: ResumeData = {
   layout: 'XYZ',
   contact: '(11) 98888-7777 | maria@email.com | São Paulo/SP',
   summary: '',
-  experience: 'Superei a meta de vendas em 25% no semestre, reorganizando o funil de atendimento ao cliente',
+  experiences: [
+    {
+      role: 'Vendedora',
+      company: 'Loja Alfa',
+      period: '2023-2025',
+      achievement: 'Superei a meta de vendas em 25% reorganizando o funil de atendimento ao cliente',
+    },
+  ],
   education: '',
   skills: '',
   languages: '',
+  photo: '',
+  photoCircle: '',
+  accentColor: '',
 };
 
 const roles = suggestionsFor('targetRole', salesResume) ?? [];
@@ -54,16 +64,24 @@ const skills = suggestionsFor('skills', salesResume) ?? [];
 console.log(`Habilidades sugeridas: ${skills[0]}`);
 check('habilidades dinâmicas do pacote comercial', skills[0]?.includes('Vendas') === true);
 
-const juniorResume: ResumeData = {
-  ...salesResume,
-  experience: 'Ainda não tenho experiência formal',
-};
+const juniorResume: ResumeData = { ...salesResume, experiences: [] };
 const juniorSummaries = suggestionsFor('summary', juniorResume) ?? [];
 console.log(`Resumo iniciante: ${juniorSummaries[0]?.slice(0, 80)}...`);
 check('modo primeira oportunidade ativado', juniorSummaries[0]?.includes('primeira oportunidade') === true);
 
-for (const layout of ['Clássico (CV)', 'ATS (robôs)', 'XYZ (Google)', 'Moderno (lateral)', 'Executivo (faixa)', 'Clean (serif)', 'Minimal (colunas)']) {
-  const resume: ResumeData = { ...salesResume, layout };
+const LAYOUTS = [
+  'Clássico (Curriculum Vitae tradicional)',
+  'ATS (padrão para robôs de RH)',
+  'XYZ (padrão Google)',
+  'Moderno (barra lateral com foto)',
+  'Executivo (faixa escura com foto)',
+  'Clean (elegante, serif com foto)',
+  'Minimal (duas colunas sóbrias)',
+];
+
+for (const layout of LAYOUTS) {
+  const accent = layout.startsWith('XYZ') ? '#1A73E8' : '';
+  const resume: ResumeData = { ...salesResume, layout, accentColor: accent };
   const pdfOk = Buffer.from(await buildResumePdf(resume).arrayBuffer()).subarray(0, 4).toString() === '%PDF';
   const docxOk = Buffer.from(await (await buildResumeDocx(resume)).arrayBuffer()).subarray(0, 2).toString() === 'PK';
   check(`${layout.split(' ')[0]}: PDF ${pdfOk ? 'OK' : 'FALHOU'} | DOCX ${docxOk ? 'OK' : 'FALHOU'}`, pdfOk && docxOk);

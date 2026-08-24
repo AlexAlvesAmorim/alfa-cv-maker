@@ -1,10 +1,59 @@
-import type { ResumeData } from '../types';
+import type { Experience, ResumeData } from '../types';
 
 export type TemplateId = 'classic' | 'ats' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal';
 
 export interface ResumeSection {
   title: string;
   items: string[];
+}
+
+export function experienceLine(experience: Experience): string {
+  const parts = [
+    experience.role,
+    experience.company,
+    experience.period ? `(${experience.period})` : '',
+    experience.achievement ? `: ${experience.achievement}` : '',
+  ];
+  return parts.map((part) => part.trim()).filter(Boolean).join(' ').replace(/\s+:/, ':');
+}
+
+export function experienceText(resume: ResumeData): string {
+  return resume.experiences.map(experienceLine).join('\n');
+}
+
+export const ACCENT_PRESETS = [
+  { hex: '#B3121F', name: 'Vermelho Alfa' },
+  { hex: '#1A73E8', name: 'Azul' },
+  { hex: '#0F766E', name: 'Verde' },
+  { hex: '#3F4E63', name: 'Grafite' },
+  { hex: '#7C3AED', name: 'Roxo' },
+  { hex: '#C2410C', name: 'Laranja' },
+];
+
+function parseHex(hex: string): [number, number, number] | null {
+  const clean = hex.replace('#', '');
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return null;
+  return [
+    parseInt(clean.slice(0, 2), 16),
+    parseInt(clean.slice(2, 4), 16),
+    parseInt(clean.slice(4, 6), 16),
+  ];
+}
+
+export function accentRgb(resume: ResumeData, fallback: [number, number, number]): [number, number, number] {
+  return resume.accentColor ? parseHex(resume.accentColor) ?? fallback : fallback;
+}
+
+export function accentHex(resume: ResumeData, fallback: string): string {
+  return resume.accentColor || fallback;
+}
+
+export function shadeRgb(rgb: [number, number, number], factor: number): [number, number, number] {
+  return rgb.map((channel) => Math.round(channel * factor)) as [number, number, number];
+}
+
+export function rgbToHex(rgb: [number, number, number]): string {
+  return `#${rgb.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 }
 
 export function getTemplateId(layout: string): TemplateId {
@@ -63,7 +112,7 @@ export function orderedContactParts(contact: string): string[] {
 export function buildSections(resume: ResumeData): ResumeSection[] {
   const raw: ResumeSection[] = [
     { title: 'Resumo', items: resume.summary.trim() ? [resume.summary.trim()] : [] },
-    { title: 'Experiência Profissional', items: splitLines(resume.experience) },
+    { title: 'Experiência Profissional', items: resume.experiences.map(experienceLine) },
     { title: 'Formação Acadêmica', items: splitLines(resume.education) },
     { title: 'Habilidades', items: splitSkills(resume.skills) },
     { title: 'Idiomas', items: splitLines(resume.languages) },

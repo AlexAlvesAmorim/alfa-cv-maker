@@ -1,4 +1,5 @@
 import type { ResumeData, ResumeField } from '../types';
+import { experienceText } from '../utils/resumeContent';
 
 interface RoleProfile {
   pattern: RegExp;
@@ -44,23 +45,19 @@ const DEFAULT_SKILLS =
   'Comunicação, Trabalho em equipe, Organização, Pró-atividade, Facilidade para aprender';
 
 function detectProfiles(resume: ResumeData): RoleProfile[] {
-  const haystack = `${resume.experience} ${resume.summary} ${resume.targetRole}`;
+  const haystack = `${experienceText(resume)} ${resume.summary} ${resume.targetRole}`;
   return PROFILES.filter((profile) => profile.pattern.test(haystack));
 }
 
 function firstExperienceLine(resume: ResumeData): string {
-  const line = resume.experience
-    .split(/\r?\n/)
-    .map((part) => part.trim())
-    .find(Boolean);
-  if (!line) return '';
+  const first = resume.experiences[0];
+  if (!first) return '';
+  const line = [first.role, first.company, first.achievement].filter(Boolean).join(' - ');
   return line.length > 110 ? `${line.slice(0, 107).trimEnd()}...` : line;
 }
 
-const NO_EXPERIENCE_PATTERN = /n(ã)a?o tenho|sem experi[êe]ncia|primeira experi[êe]ncia|sem registro|iniciante/i;
-
 function hasNoFormalExperience(resume: ResumeData): boolean {
-  return resume.experience === '' || NO_EXPERIENCE_PATTERN.test(resume.experience);
+  return resume.experiences.length === 0;
 }
 
 function roleFor(resume: ResumeData): string {

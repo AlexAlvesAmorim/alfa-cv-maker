@@ -1,10 +1,10 @@
 import type { ResumeData } from '../types';
-import { buildResumePdf, downloadResumePdf } from './pdfExport';
 import { fileNameFor } from './resumeContent';
 
 export type EmailResult = 'shared' | 'mailto';
 
 export async function sendResumeByEmail(resume: ResumeData): Promise<EmailResult> {
+  const { buildResumePdf, downloadResumePdf } = await import('./pdfExport');
   const pdfBlob = buildResumePdf(resume);
   const pdfFile = new File([pdfBlob], fileNameFor(resume, 'pdf'), { type: 'application/pdf' });
 

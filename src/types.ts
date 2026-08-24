@@ -6,18 +6,26 @@ export interface Message {
   text: string;
 }
 
+export interface Experience {
+  role: string;
+  company: string;
+  period: string;
+  achievement: string;
+}
+
 export interface ResumeData {
   fullName: string;
   targetRole: string;
   layout: string;
   contact: string;
   summary: string;
-  experience: string;
+  experiences: Experience[];
   education: string;
   skills: string;
   languages: string;
   photo: string;
   photoCircle: string;
+  accentColor: string;
 }
 
 export type ResumeField = keyof ResumeData;
@@ -37,12 +45,13 @@ export const EMPTY_RESUME: ResumeData = {
   layout: '',
   contact: '',
   summary: '',
-  experience: '',
+  experiences: [],
   education: '',
   skills: '',
   languages: '',
   photo: '',
   photoCircle: '',
+  accentColor: '',
 };
 
 export const SKIP_VALUE = '__skip__';
