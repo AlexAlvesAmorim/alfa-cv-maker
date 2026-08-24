@@ -652,8 +652,10 @@ function renderClean(doc: jsPDF, resume: ResumeData): void {
   doc.setFont('times', 'bolditalic');
   doc.setFontSize(28);
   doc.setTextColor(...accent);
-  doc.text(resume.fullName || 'Nome não informado', marginX, cursor.y + 8);
-  cursor.y += 15;
+  const nameWidth = PAGE_W - marginX * 2 - (resume.photo ? 52 : 0);
+  const nameLines = doc.splitTextToSize(resume.fullName || 'Nome não informado', nameWidth) as string[];
+  nameLines.forEach((line, index) => doc.text(line, marginX, cursor.y + 8 + index * 11));
+  cursor.y += 15 + (nameLines.length - 1) * 11;
 
   doc.setFont('times', 'bold');
   doc.setFontSize(11);

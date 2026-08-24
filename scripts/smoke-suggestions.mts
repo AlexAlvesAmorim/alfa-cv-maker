@@ -88,12 +88,22 @@ const LAYOUTS = [
   'Minimal (duas colunas sóbrias)',
 ];
 
+const TINY_PHOTO =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
 for (const layout of LAYOUTS) {
   const accent = layout.startsWith('XYZ') ? '#1A73E8' : '';
-  const resume: ResumeData = { ...salesResume, layout, accentColor: accent };
+  const comFoto = /Moderno|Executivo|Clean|Minimal/.test(layout);
+  const resume: ResumeData = {
+    ...salesResume,
+    layout,
+    accentColor: accent,
+    photo: comFoto ? TINY_PHOTO : '',
+    photoCircle: comFoto ? TINY_PHOTO : '',
+  };
   const pdfOk = Buffer.from(await buildResumePdf(resume).arrayBuffer()).subarray(0, 4).toString() === '%PDF';
   const docxOk = Buffer.from(await (await buildResumeDocx(resume)).arrayBuffer()).subarray(0, 2).toString() === 'PK';
-  check(`${layout.split(' ')[0]}: PDF ${pdfOk ? 'OK' : 'FALHOU'} | DOCX ${docxOk ? 'OK' : 'FALHOU'}`, pdfOk && docxOk);
+  check(`${layout.split(' ')[0]}${comFoto ? ' (com foto)' : ''}: PDF ${pdfOk ? 'OK' : 'FALHOU'} | DOCX ${docxOk ? 'OK' : 'FALHOU'}`, pdfOk && docxOk);
 }
 
 console.log(failures === 0 ? 'TODOS OS TESTES PASSARAM' : `${failures} TESTE(S) FALHARAM`);

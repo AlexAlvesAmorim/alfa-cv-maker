@@ -473,14 +473,14 @@ function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
   if (resume.photo) {
     children.push(
       new Table({
-        width: { size: 10466, type: WidthType.DXA },
-        columnWidths: [6800, 3666],
+        width: { size: 9706, type: WidthType.DXA },
+        columnWidths: [6040, 3666],
         borders: NO_BORDER,
         rows: [
           new TableRow({
             children: [
               new TableCell({
-                width: { size: 6800, type: WidthType.DXA },
+                width: { size: 6040, type: WidthType.DXA },
                 children: [
                   new Paragraph({
                     children: [new TextRun({ text: resume.fullName || 'Nome não informado', bold: true, italics: true, size: 56, color: accent, font: 'Georgia' })],
