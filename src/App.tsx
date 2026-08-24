@@ -9,6 +9,7 @@ import { SummaryCard } from './components/SummaryCard';
 import { PhotoUpload } from './components/PhotoUpload';
 import { ExperienceForm } from './components/ExperienceForm';
 import { TemplatePicker } from './components/TemplatePicker';
+import { AlfaMatch } from './components/AlfaMatch';
 import type { ProcessedPhoto } from './utils/photo';
 import { EMPTY_RESUME, SKIP_VALUE, type Message, type ResumeData, type ResumeField } from './types';
 import { FINISH_MESSAGE, STEPS, WELCOME_MESSAGE } from './data/steps';
@@ -48,6 +49,7 @@ export default function App() {
   const [resume, setResume] = useState<ResumeData>(() => draft?.resume ?? EMPTY_RESUME);
   const [isTyping, setIsTyping] = useState(false);
   const [draftText, setDraftText] = useState('');
+  const [mode, setMode] = useState<'chat' | 'match'>('chat');
 
   const nextIdRef = useRef(1);
   const timerRef = useRef<number | null>(null);
@@ -211,7 +213,17 @@ export default function App() {
 
   return (
     <div className="app">
-      <Header step={Math.min(stepIndex + 1, STEPS.length)} totalSteps={STEPS.length} />
+      <Header
+        step={Math.min(stepIndex + 1, STEPS.length)}
+        totalSteps={STEPS.length}
+        mode={mode}
+        onModeChange={setMode}
+      />
+      {mode === 'match' ? (
+        <main className="chat">
+          <AlfaMatch resume={resume} onBack={() => setMode('chat')} />
+        </main>
+      ) : (
       <main className="chat">
         <div className="chat__messages">
           {messages.map((message) => (
@@ -256,6 +268,7 @@ export default function App() {
           </>
         )}
       </main>
+      )}
     </div>
   );
 }

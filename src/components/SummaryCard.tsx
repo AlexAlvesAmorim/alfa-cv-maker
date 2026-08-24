@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ResumeData, ResumeField } from '../types';
 import { ACCENT_PRESETS, saveBlob } from '../utils/resumeContent';
 import { analyzeForJob, type AtsResult } from '../utils/atsAnalyzer';
+import { AtsReport } from './AtsReport';
 import { PdfPreviewModal } from './PdfPreviewModal';
 
 interface SummaryCardProps {
@@ -183,35 +184,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
         <button type="button" className="btn btn--outline" disabled={jobDescription.trim().length < 20} onClick={handleAnalyze}>
           Analisar compatibilidade
         </button>
-        {atsResult && (
-          <div className="ats-analyzer__result">
-            <div className="ats-analyzer__score-row">
-              <div className="ats-analyzer__bar">
-                <div
-                  className="ats-analyzer__fill"
-                  data-level={atsResult.score >= 70 ? 'high' : atsResult.score >= 40 ? 'mid' : 'low'}
-                  style={{ width: `${atsResult.score}%` }}
-                />
-              </div>
-              <span className="ats-analyzer__score">{atsResult.score}%</span>
-            </div>
-            <p className="ats-analyzer__detail">
-              {atsResult.matched.length} de {atsResult.totalKeywords} palavras-chave da vaga encontradas no seu currículo.
-            </p>
-            {atsResult.missing.length > 0 && (
-              <>
-                <p className="ats-analyzer__detail">Palavras-chave ausentes (considere incluir, se fizer sentido):</p>
-                <div className="ats-analyzer__keywords">
-                  {atsResult.missing.map((keyword) => (
-                    <span className="ats-analyzer__keyword" key={keyword}>
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        )}
+        {atsResult && <AtsReport result={atsResult} />}
       </div>
 
       {previewUrl && <PdfPreviewModal url={previewUrl} resume={resume} onClose={() => setPreviewUrl(null)} />}
