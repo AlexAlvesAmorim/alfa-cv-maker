@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Message } from '../types';
 import { Logo } from './Logo';
 
@@ -5,7 +6,7 @@ interface ChatMessageProps {
   message: Message;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export const ChatMessage = memo(function ChatMessage({ message }: ChatMessageProps) {
   const isBot = message.from === 'bot';
 
   return (
@@ -22,4 +23,4 @@ export function ChatMessage({ message }: ChatMessageProps) {
       </div>
     </div>
   );
-}
+});

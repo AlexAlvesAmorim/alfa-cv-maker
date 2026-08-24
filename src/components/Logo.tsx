@@ -1,8 +1,10 @@
+import { memo } from 'react';
+
 interface LogoProps {
   size?: number;
 }
 
-export function Logo({ size = 44 }: LogoProps) {
+export const Logo = memo(function Logo({ size = 44 }: LogoProps) {
   return (
     <svg
       width={size}
@@ -87,4 +89,4 @@ export function Logo({ size = 44 }: LogoProps) {
       <rect x="40" y="40" width="432" height="432" rx="104" fill="none" stroke="#ffffff" strokeOpacity="0.07" strokeWidth="3" />
     </svg>
   );
-}
+});

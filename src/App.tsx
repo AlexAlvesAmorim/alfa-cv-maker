@@ -51,13 +51,16 @@ export default function App() {
 
   const nextIdRef = useRef(1);
   const timerRef = useRef<number | null>(null);
+  const draftTimerRef = useRef<number | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const didStartRef = useRef(false);
 
   useEffect(() => {
-    if (resume !== EMPTY_RESUME || stepIndex > 0) {
+    if (draftTimerRef.current !== null) window.clearTimeout(draftTimerRef.current);
+    if (resume === EMPTY_RESUME && stepIndex === 0) return;
+    draftTimerRef.current = window.setTimeout(() => {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({ resume, stepIndex } satisfies Draft));
-    }
+    }, 400);
   }, [resume, stepIndex]);
 
   function pushMessage(from: Message['from'], text: string) {
@@ -108,6 +111,14 @@ export default function App() {
     return currentStep.suggestions;
   }
 
+  function flushBot() {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setIsTyping(false);
+  }
+
   function advanceStep() {
     const nextQuestion = stepIndex + 1 < STEPS.length ? STEPS[stepIndex + 1].question : FINISH_MESSAGE;
     setStepIndex((index) => index + 1);
@@ -116,11 +127,10 @@ export default function App() {
   }
 
   function goBack() {
-    if (isTyping || stepIndex === 0) return;
+    if (stepIndex === 0) return;
     const target = Math.min(stepIndex, STEPS.length - 1) - (finished ? 0 : 1);
     if (target < 0) return;
-    setIsTyping(false);
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    flushBot();
     setStepIndex(target);
     setDraftText('');
     botSay(STEPS[target].question);
@@ -136,14 +146,16 @@ export default function App() {
   }
 
   function submitPhoto(result: ProcessedPhoto) {
-    if (!currentStep || currentStep.id !== 'photo' || finished || isTyping) return;
+    if (!currentStep || currentStep.id !== 'photo' || finished) return;
+    flushBot();
     pushMessage('user', 'Foto 3x4 adicionada');
     setResume((prev) => ({ ...prev, photo: result.photo, photoCircle: result.photoCircle }));
     advanceStep();
   }
 
   function submitExperiences(list: typeof resume.experiences) {
-    if (!currentStep || currentStep.id !== 'experiences' || finished || isTyping) return;
+    if (!currentStep || currentStep.id !== 'experiences' || finished) return;
+    flushBot();
     if (list.length === 0) {
       pushMessage('user', 'Não tenho experiência formal');
     } else {
@@ -156,13 +168,23 @@ export default function App() {
   function handleSend(rawText: string) {
     const isSkip = rawText === SKIP_VALUE;
     const text = isSkip ? 'Pular esta etapa' : rawText.trim();
-    if (text === '' || !currentStep || finished || isTyping) return;
+    if (text === '' || !currentStep || finished) return;
 
     if (isFormStep) {
+      flushBot();
+      if (currentStep.id === 'layout') {
+        const storedValue = isSkip ? '' : rawText.trim();
+        pushMessage('user', text);
+        setResume((prev) => ({ ...prev, layout: storedValue }));
+        advanceStep();
+        return;
+      }
       const formName = currentStep.id === 'photo' ? '"Escolher foto (3x4)"' : 'o formulário de experiências';
       botSay(`Para esta etapa, use ${formName} aqui embaixo.`);
       return;
     }
+
+    if (isTyping) return;
 
     const storedValue =
       !isSkip && currentStep.id === 'fullName' ? cleanFullName(rawText.trim()) : isSkip ? '' : rawText.trim();
@@ -209,11 +231,11 @@ export default function App() {
         {!finished && (
           <>
             {currentStep?.id === 'layout' && (
-              <TemplatePicker selected={resume.layout} disabled={isTyping} onPick={handleSend} />
+              <TemplatePicker selected={resume.layout} disabled={false} onPick={handleSend} />
             )}
-            {currentStep?.id === 'photo' && <PhotoUpload disabled={isTyping} onPhoto={submitPhoto} />}
+            {currentStep?.id === 'photo' && <PhotoUpload disabled={false} onPhoto={submitPhoto} />}
             {currentStep?.id === 'experiences' && (
-              <ExperienceForm initial={resume.experiences} disabled={isTyping} onSave={submitExperiences} />
+              <ExperienceForm initial={resume.experiences} disabled={false} onSave={submitExperiences} />
             )}
             {currentStep && !isFormStep && (
               <SuggestionChips
