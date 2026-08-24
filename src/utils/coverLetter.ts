@@ -2,10 +2,13 @@ import { jsPDF } from 'jspdf';
 import type { ResumeData } from '../types';
 import { orderedContactParts } from './resumeContent';
 
+const PAGE_BOTTOM = 297;
+
 export function buildCoverLetterPdf(resume: ResumeData): Blob {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const marginX = 22;
+  const marginX = 17;
   const contentW = 210 - marginX * 2;
+  const bottomLimit = PAGE_BOTTOM - 14;
   let y = 26;
 
   doc.setFont('helvetica', 'bold');
@@ -54,7 +57,7 @@ export function buildCoverLetterPdf(resume: ResumeData): Blob {
   const body = doc.splitTextToSize(`${intro}${summaryBody}${experienceBody}${closing}`, contentW) as string[];
   const lineHeight = 5.2;
   for (const line of body) {
-    if (y > 262) {
+    if (y > bottomLimit - 8) {
       doc.addPage();
       y = 26;
     }
@@ -63,7 +66,7 @@ export function buildCoverLetterPdf(resume: ResumeData): Blob {
   }
 
   y += 14;
-  if (y > 270) {
+  if (y > bottomLimit) {
     doc.addPage();
     y = 26;
   }

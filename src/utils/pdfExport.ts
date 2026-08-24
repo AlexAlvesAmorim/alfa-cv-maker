@@ -210,7 +210,7 @@ const CLASSIC_STYLE: SingleColumnStyle = {
 
 function renderClassic(doc: jsPDF, resume: ResumeData): void {
   const style = CLASSIC_STYLE;
-  const marginX = 22;
+  const marginX = 17;
   const contentW = PAGE_W - marginX * 2;
   const cursor: Cursor = { doc, y: 26 };
 
@@ -264,7 +264,7 @@ function renderClassic(doc: jsPDF, resume: ResumeData): void {
 /* ---------- ATS (padrão Bateman) ---------- */
 
 function renderAts(doc: jsPDF, resume: ResumeData): void {
-  const marginX = 18;
+  const marginX = 17;
   const contentW = PAGE_W - marginX * 2;
   const cursor: Cursor = { doc, y: 24 };
   const sections = buildSections(resume);
@@ -331,7 +331,7 @@ function renderAts(doc: jsPDF, resume: ResumeData): void {
 
 function renderXyz(doc: jsPDF, resume: ResumeData): void {
   const headColor = accentRgb(resume, DARK2);
-  const marginX = 18;
+  const marginX = 17;
   const contentW = PAGE_W - marginX * 2;
   const cursor: Cursor = { doc, y: 22 };
   const sections = buildSections(resume);
@@ -471,7 +471,7 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   }
 
   const mainX = sidebarW + 12;
-  const mainW = PAGE_W - mainX - 14;
+  const mainW = PAGE_W - mainX - 17;
   const main: Cursor = { doc, y: 28 };
 
   doc.setFont('helvetica', 'bold');
@@ -528,7 +528,7 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(7.5);
   doc.setTextColor(...MUTED);
-  doc.text('Gerado com Alfa Curriculum Maker', mainX, PAGE_H - 8);
+  doc.text('Gerado com Alfa Curriculum Maker', mainX, PAGE_H - 14);
 }
 
 /* ---------- EXECUTIVO (faixa azul-acinzentada) ---------- */
@@ -551,8 +551,8 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
   doc.text((resume.targetRole || '').toUpperCase(), 70, 36, { charSpace: 0.5 });
 
   let sideY = 76;
-  const sideX = 14;
-  const sideW = 60;
+  const sideX = 17;
+  const sideW = 56;
 
   const sideHeading = (title: string) => {
     ensureSpace(cursor, 13, 60);
@@ -608,7 +608,7 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
   }
 
   const mainX = 86;
-  const mainW = PAGE_W - mainX - 14;
+  const mainW = PAGE_W - mainX - 17;
   const main: Cursor = { doc, y: 72 };
 
   const mainHeading = (title: string) => {
@@ -646,7 +646,7 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
 
 function renderClean(doc: jsPDF, resume: ResumeData): void {
   const accent = accentRgb(resume, TEAL);
-  const marginX = 16;
+  const marginX = 17;
   const cursor: Cursor = { doc, y: 22 };
 
   if (resume.photo) {
@@ -747,7 +747,7 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
   const sections = buildSections(resume);
   const find = (title: string) => sections.find((section) => section.title === title);
 
-  const leftX = 20;
+  const leftX = 17;
   const leftRight = 76;
   const leftW = leftRight - leftX;
 
@@ -806,7 +806,7 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
   doc.line(86, 14, 86, 283);
 
   const mainX = 94;
-  const mainW = PAGE_W - mainX - 16;
+  const mainW = PAGE_W - mainX - 17;
   const main: Cursor = { doc, y: 22 };
 
   doc.setFont('helvetica', 'bold');

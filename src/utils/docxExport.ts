@@ -119,7 +119,7 @@ function baseDocument(font: string, children: (Paragraph | Table)[], zeroMargins
           page: {
             margin: zeroMargins
               ? { top: 0, right: 0, bottom: 0, left: 0 }
-              : { top: 1000, right: 1100, bottom: 1000, left: 1100 },
+              : { top: 794, right: 964, bottom: 794, left: 964 },
           },
         },
         children,
