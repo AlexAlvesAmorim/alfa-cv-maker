@@ -29,9 +29,16 @@ export function Header({ step, totalSteps, mode, onModeChange }: HeaderProps) {
 
       <div className="header__side">
         {inChat && (
-          <div className="header__progress" aria-label={`Etapa ${step} de ${totalSteps}`}>
+          <div
+            className="header__progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+            aria-label={`Etapa ${step} de ${totalSteps}`}
+          >
             <div className="header__progress-bar">
-              <div className="header__progress-fill" style={{ width: `${progress}%` }} />
+              <div className="header__progress-fill" style={{ transform: `scaleX(${progress / 100})` }} />
             </div>
             <span className="header__progress-label">{step}/{totalSteps}</span>
           </div>
@@ -39,6 +46,7 @@ export function Header({ step, totalSteps, mode, onModeChange }: HeaderProps) {
         <button
           type="button"
           className={`header__mode-btn ${!inChat ? 'header__mode-btn--active' : ''}`}
+          aria-pressed={!inChat}
           onClick={() => onModeChange(inChat ? 'match' : 'chat')}
         >
           {!inChat ? '← Assistente' : 'Alfa Match'}

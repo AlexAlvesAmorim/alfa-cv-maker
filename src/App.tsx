@@ -10,14 +10,17 @@ import { PhotoUpload } from './components/PhotoUpload';
 import { ExperienceForm } from './components/ExperienceForm';
 import { TemplatePicker } from './components/TemplatePicker';
 import { AlfaMatch } from './components/AlfaMatch';
+import { ImportResume } from './components/ImportResume';
 import type { ProcessedPhoto } from './utils/photo';
+import type { ImportResult } from './utils/resumeImport';
 import { EMPTY_RESUME, SKIP_VALUE, type Message, type ResumeData, type ResumeField } from './types';
 import { FINISH_MESSAGE, STEPS, WELCOME_MESSAGE } from './data/steps';
-import { suggestionsFor } from './data/dynamicSuggestions';
+import { extraSuggestionsFor, recommendedTemplateId, suggestionsFor } from './data/dynamicSuggestions';
+import { findTemplateByInput } from './data/templates';
 import { cleanFullName } from './utils/resumeContent';
 
 const BOT_DELAY_MS = 900;
-const DRAFT_KEY = 'alfa-cv-draft-v1';
+const DRAFT_KEY = 'alfa-cv-draft-v2';
 
 interface Draft {
   resume: ResumeData;
@@ -50,6 +53,7 @@ export default function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [mode, setMode] = useState<'chat' | 'match'>('chat');
+  const [returnToSummary, setReturnToSummary] = useState(false);
 
   const nextIdRef = useRef(1);
   const timerRef = useRef<number | null>(null);
@@ -105,12 +109,15 @@ export default function App() {
   const isFormStep =
     currentStep?.id === 'experiences' || currentStep?.id === 'photo' || currentStep?.id === 'layout';
 
-  function suggestionsNow(): string[] {
-    if (!currentStep || isTyping || finished || isFormStep) return [];
+  function suggestionsNow(): { main: string[]; extra: string[] } {
+    if (!currentStep || isTyping || finished || isFormStep) return { main: [], extra: [] };
     if (currentStep.dynamic) {
-      return suggestionsFor(currentStep.id, resume) ?? currentStep.suggestions;
+      return {
+        main: suggestionsFor(currentStep.id, resume) ?? currentStep.suggestions,
+        extra: extraSuggestionsFor(currentStep.id),
+      };
     }
-    return currentStep.suggestions;
+    return { main: currentStep.suggestions, extra: [] };
   }
 
   function flushBot() {
@@ -122,6 +129,17 @@ export default function App() {
   }
 
   function advanceStep() {
+    if (returnToSummary) {
+      setReturnToSummary(false);
+      setStepIndex(STEPS.length);
+      setDraftText('');
+      setIsTyping(true);
+      timerRef.current = window.setTimeout(() => {
+        setIsTyping(false);
+        pushMessage('bot', 'Pronto! Atualizei o painel abaixo com o que você ajustou.');
+      }, BOT_DELAY_MS);
+      return;
+    }
     const nextQuestion = stepIndex + 1 < STEPS.length ? STEPS[stepIndex + 1].question : FINISH_MESSAGE;
     setStepIndex((index) => index + 1);
     setDraftText('');
@@ -133,6 +151,7 @@ export default function App() {
     const target = Math.min(stepIndex, STEPS.length - 1) - (finished ? 0 : 1);
     if (target < 0) return;
     flushBot();
+    setReturnToSummary(false);
     setStepIndex(target);
     setDraftText('');
     botSay(STEPS[target].question);
@@ -143,6 +162,7 @@ export default function App() {
     if (target < 0 || isTyping) return;
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     setIsTyping(false);
+    setReturnToSummary(true);
     setStepIndex(target);
     botSay(STEPS[target].question);
   }
@@ -175,9 +195,22 @@ export default function App() {
     if (isFormStep) {
       flushBot();
       if (currentStep.id === 'layout') {
-        const storedValue = isSkip ? '' : rawText.trim();
+        if (isSkip) {
+          pushMessage('user', text);
+          setResume((prev) => ({ ...prev, layout: '' }));
+          advanceStep();
+          return;
+        }
+        const match = findTemplateByInput(rawText);
         pushMessage('user', text);
-        setResume((prev) => ({ ...prev, layout: storedValue }));
+        if (!match) {
+          botSay(
+            'Não encontrei um modelo com esse nome. Escolha um dos cards acima — o destacado como '
+              + '"Recomendado" é o que combina mais com o seu perfil.',
+          );
+          return;
+        }
+        setResume((prev) => ({ ...prev, layout: match.value }));
         advanceStep();
         return;
       }
@@ -207,8 +240,26 @@ export default function App() {
     setResume(EMPTY_RESUME);
     setIsTyping(false);
     setDraftText('');
+    setReturnToSummary(false);
     pushMessage('bot', WELCOME_MESSAGE);
     timerRef.current = window.setTimeout(() => pushMessage('bot', STEPS[0].question), BOT_DELAY_MS);
+  }
+
+  function handleImported(result: ImportResult) {
+    flushBot();
+    pushMessage('user', 'Importei meu currículo atual');
+    setResume((prev) => ({ ...prev, ...result.fields }));
+    setStepIndex(STEPS.length);
+    setDraftText('');
+    setIsTyping(true);
+    timerRef.current = window.setTimeout(() => {
+      setIsTyping(false);
+      pushMessage(
+        'bot',
+        `Reconheci: ${result.recognized.join(', ')}. Revise no painel abaixo — clique em qualquer campo para ajustar, `
+          + 'escolha o modelo e baixe em PDF ou DOCX.',
+      );
+    }, BOT_DELAY_MS);
   }
 
   return (
@@ -221,11 +272,15 @@ export default function App() {
       />
       {mode === 'match' ? (
         <main className="chat">
-          <AlfaMatch resume={resume} onBack={() => setMode('chat')} />
+          <AlfaMatch
+            resume={resume}
+            onBack={() => setMode('chat')}
+            onResumeUpdate={(fields) => setResume((prev) => ({ ...prev, ...fields }))}
+          />
         </main>
       ) : (
       <main className="chat">
-        <div className="chat__messages">
+        <div className="chat__messages" role="log" aria-label="Conversa com o assistente">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
@@ -243,19 +298,29 @@ export default function App() {
         {!finished && (
           <>
             {currentStep?.id === 'layout' && (
-              <TemplatePicker selected={resume.layout} disabled={false} onPick={handleSend} />
+              <TemplatePicker
+                selected={resume.layout}
+                disabled={false}
+                recommended={recommendedTemplateId(resume)}
+                onPick={handleSend}
+              />
             )}
             {currentStep?.id === 'photo' && <PhotoUpload disabled={false} onPhoto={submitPhoto} />}
             {currentStep?.id === 'experiences' && (
               <ExperienceForm initial={resume.experiences} disabled={false} onSave={submitExperiences} />
             )}
-            {currentStep && !isFormStep && (
-              <SuggestionChips
-                suggestions={suggestionsNow()}
-                optional={currentStep.optional ?? false}
-                onPick={handleSend}
-              />
-            )}
+            {currentStep && !isFormStep && (() => {
+              const suggestions = suggestionsNow();
+              return (
+                <SuggestionChips
+                  suggestions={suggestions.main}
+                  extraSuggestions={suggestions.extra}
+                  optional={currentStep.optional ?? false}
+                  onPick={handleSend}
+                />
+              );
+            })()}
+            {stepIndex === 0 && !isTyping && <ImportResume variant="chat" onImported={handleImported} />}
             <ChatInput
               value={draftText}
               placeholder={currentStep?.placeholder ?? 'Digite aqui...'}

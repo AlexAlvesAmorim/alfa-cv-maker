@@ -36,13 +36,13 @@ describe('fluxo do chat', () => {
 
     expect(screen.getByText('meu nome é joao silva')).toBeInTheDocument();
     advanceBot();
-    expect(screen.getByText(/escolha o modelo do seu currículo/i)).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('alfa-cv-draft-v1')!).resume.fullName).toBe('Joao Silva');
+    expect(screen.getByText(/seus dados de contato/i)).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem('alfa-cv-draft-v2')!).resume.fullName).toBe('Joao Silva');
   });
 
   it('recupera o rascunho salvo ao reabrir', () => {
     localStorage.setItem(
-      'alfa-cv-draft-v1',
+      'alfa-cv-draft-v2',
       JSON.stringify({
         resume: {
           fullName: 'Maria da Silva',
@@ -65,7 +65,7 @@ describe('fluxo do chat', () => {
     render(<App />);
     expect(screen.getByText(/recuperei seu rascunho/i)).toBeInTheDocument();
     advanceBot();
-    expect(screen.getByText(/escolha o modelo do seu currículo/i)).toBeInTheDocument();
+    expect(screen.getByText(/seus dados de contato/i)).toBeInTheDocument();
   });
 
   it('botao voltar retorna a etapa anterior', () => {

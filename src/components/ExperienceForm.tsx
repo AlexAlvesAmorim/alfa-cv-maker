@@ -13,12 +13,14 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
   const [list, setList] = useState<Experience[]>(initial);
   const [draft, setDraft] = useState<Experience>(EMPTY_FIELD);
 
+  const draftIsFilled = draft.role.trim() !== '' || draft.company.trim() !== '';
+
   function updateDraft(field: keyof Experience, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
   }
 
   function addExperience() {
-    if (!draft.role.trim() && !draft.company.trim()) return;
+    if (!draftIsFilled) return;
     setList((current) => [
       ...current,
       {
@@ -29,6 +31,21 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
       },
     ]);
     setDraft(EMPTY_FIELD);
+  }
+
+  function saveAndContinue() {
+    const merged = draftIsFilled
+      ? [
+          ...list,
+          {
+            role: draft.role.trim(),
+            company: draft.company.trim(),
+            period: draft.period.trim(),
+            achievement: draft.achievement.trim(),
+          },
+        ]
+      : list;
+    onSave(merged);
   }
 
   function removeExperience(index: number) {
@@ -75,17 +92,18 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
         <button type="button" className="chip" onClick={addExperience} disabled={disabled}>
           + Adicionar experiência
         </button>
-        {list.length > 0 && (
+        {(list.length > 0 || draftIsFilled) && (
           <button
             type="button"
             className="chip chip--save"
-            onClick={() => onSave(list)}
+            onClick={saveAndContinue}
             disabled={disabled}
           >
-            Salvar {list.length} experiência{list.length > 1 ? 's' : ''} e continuar
+            Salvar {list.length + (draftIsFilled ? 1 : 0)} experiência
+            {list.length + (draftIsFilled ? 1 : 0) > 1 ? 's' : ''} e continuar
           </button>
         )}
-        {list.length === 0 && (
+        {list.length === 0 && !draftIsFilled && (
           <button
             type="button"
             className="chip chip--skip"

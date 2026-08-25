@@ -14,23 +14,9 @@ export const STEPS: ChatStep[] = [
     suggestions: ['Maria Oliveira Santos', 'João Pedro Almeida'],
   },
   {
-    id: 'layout',
-    question:
-      'Escolha o modelo do seu currículo — são 7, cada um com um objetivo. Toque em um card para ver e escolher:\n\n'
-      + '• Clássico: Curriculum Vitae tradicional para áreas formais\n'
-      + '• ATS: padrão para robôs de triagem de RH\n'
-      + '• XYZ: padrão Google, conquistas medidas\n'
-      + '• Moderno: barra lateral com sua foto\n'
-      + '• Executivo: faixa escura com foto, visual sênior\n'
-      + '• Clean: elegante, serif com foto\n'
-      + '• Minimal: duas colunas sóbrias',
-    placeholder: 'Escolha um modelo acima...',
-    suggestions: TEMPLATES.map((template) => template.value),
-  },
-  {
     id: 'contact',
     question:
-      'Agora seus dados de contato — eles aparecem logo abaixo do nome, nesta ordem:\ntelefone | e-mail | cidade/endereço | LinkedIn\n\nSepare com barras ( | ), por favor.',
+      'Prazer! Agora seus dados de contato — eles aparecem logo abaixo do nome, nesta ordem:\ntelefone | e-mail | cidade/endereço | LinkedIn\n\nSepare com barras ( | ), por favor.',
     placeholder: 'Ex.: (11) 98888-7777 | maria@email.com | São Paulo/SP | linkedin.com/in/maria',
     suggestions: ['(11) 98888-7777 | maria@email.com | São Paulo/SP'],
   },
@@ -41,6 +27,14 @@ export const STEPS: ChatStep[] = [
       + 'Dica de ouro — fórmula XYZ do Google: na conquista, escreva "Conquistei [resultado], medido por [número], fazendo [ação]".',
     placeholder: 'Use o formulário acima...',
     suggestions: [],
+  },
+  {
+    id: 'layout',
+    question:
+      'Agora o visual: com base no que você me contou, destaquei abaixo o modelo que mais combina com o seu momento de carreira.\n\n'
+      + 'Toque em um card para ver o exemplo preenchido antes de escolher.',
+    placeholder: 'Escolha um modelo acima...',
+    suggestions: TEMPLATES.map((template) => template.value),
   },
   {
     id: 'targetRole',
@@ -81,7 +75,7 @@ export const STEPS: ChatStep[] = [
     question: 'Você fala algum idioma além do português?',
     placeholder: 'Ex.: Inglês intermediário',
     optional: true,
-    suggestions: ['Inglês intermediário', 'Espanhol básico', 'Pular esta etapa'],
+    suggestions: ['Inglês intermediário', 'Espanhol básico'],
   },
   {
     id: 'photo',

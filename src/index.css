@@ -7,6 +7,7 @@
   --border-strong: #52141f;
   --red-blood: #8a0f1e;
   --red-bright: #c1121f;
+  --red-bright-hover: #d4162a;
   --red-glow: #ff4d5e;
   --text-main: #f4ebea;
   --text-muted: #c29ba1;
@@ -51,6 +52,11 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--red-glow);
+  outline-offset: 2px;
 }
 
 input,

@@ -1,6 +1,6 @@
 import type { ResumeData } from '../src/types';
 import { cleanFullName, orderedContactParts } from '../src/utils/resumeContent';
-import { suggestionsFor } from '../src/data/dynamicSuggestions';
+import { extraSuggestionsFor, suggestionsFor } from '../src/data/dynamicSuggestions';
 import { buildResumePdf } from '../src/utils/pdfExport';
 import { buildResumeDocx } from '../src/utils/docxExport';
 
@@ -75,8 +75,8 @@ check(
   juniorSummaries.some((item) => item.includes('primeira oportunidade')),
 );
 
-const objectives = suggestionsFor('targetRole', salesResume) ?? [];
-check('frases prontas de objetivo disponíveis', objectives.some((item) => item.startsWith('Sou iniciante na carreira')));
+const objectives = extraSuggestionsFor('targetRole');
+check('frases prontas de objetivo disponíveis nos extras', objectives.some((item) => item.startsWith('Sou iniciante na carreira')));
 
 const LAYOUTS = [
   'Clássico (Curriculum Vitae tradicional)',

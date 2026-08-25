@@ -126,15 +126,10 @@ function buildSummarySuggestions(resume: ResumeData): string[] {
 export function suggestionsFor(stepId: ResumeField, resume: ResumeData): string[] | null {
   if (stepId === 'targetRole') {
     const profiles = detectProfiles(resume);
-    const roleSuggestions =
-      profiles.length > 0
-        ? (() => {
-            const roles = new Set<string>();
-            profiles.forEach((profile) => profile.roles.forEach((role) => roles.add(role)));
-            return [...roles].slice(0, 3);
-          })()
-        : DEFAULT_ROLES;
-    return [...roleSuggestions, ...OBJECTIVE_PHRASES];
+    if (profiles.length === 0) return DEFAULT_ROLES;
+    const roles = new Set<string>();
+    profiles.forEach((profile) => profile.roles.forEach((role) => roles.add(role)));
+    return [...roles].slice(0, 4);
   }
 
   if (stepId === 'skills') {
@@ -152,4 +147,15 @@ export function suggestionsFor(stepId: ResumeField, resume: ResumeData): string[
   }
 
   return null;
+}
+
+export function extraSuggestionsFor(stepId: ResumeField): string[] {
+  if (stepId === 'targetRole') return OBJECTIVE_PHRASES;
+  return [];
+}
+
+export function recommendedTemplateId(resume: ResumeData): string {
+  if (resume.experiences.length === 0) return 'ats';
+  const hasAchievements = resume.experiences.some((experience) => experience.achievement.trim() !== '');
+  return hasAchievements ? 'xyz' : 'classic';
 }

@@ -13,6 +13,9 @@ function KeywordGroup({
   return (
     <div className="ats-group">
       <h4 className="ats-group__title">{title}</h4>
+      {missing.length > 0 && (
+        <p className="ats-group__legend">Tracejado = ausente no seu currículo.</p>
+      )}
       <div className="ats-group__keywords">
         {matched.map((keyword) => (
           <span className="ats-keyword ats-keyword--matched" key={`m-${keyword}`}>
@@ -21,7 +24,7 @@ function KeywordGroup({
         ))}
         {missing.map((keyword) => (
           <span className="ats-keyword ats-keyword--missing" key={`f-${keyword}`} title="Não encontrada no seu currículo">
-            {keyword} +
+            {keyword}
           </span>
         ))}
       </div>

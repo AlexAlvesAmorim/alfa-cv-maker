@@ -51,3 +51,15 @@ export const TEMPLATES: TemplateInfo[] = [
     description: 'Duas colunas sóbrias e discretas',
   },
 ];
+
+export function findTemplateByInput(input: string): TemplateInfo | null {
+  const normalized = input.trim().toLowerCase();
+  if (normalized === '') return null;
+  return (
+    TEMPLATES.find((template) => template.value.toLowerCase() === normalized)
+    ?? TEMPLATES.find((template) => template.label.toLowerCase() === normalized)
+    ?? (normalized.length >= 3
+      ? TEMPLATES.find((template) => template.value.toLowerCase().includes(normalized)) ?? null
+      : null)
+  );
+}

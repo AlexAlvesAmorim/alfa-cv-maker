@@ -1,5 +1,5 @@
 ﻿import { describe, expect, it } from 'vitest';
-import { suggestionsFor } from './data/dynamicSuggestions';
+import { extraSuggestionsFor, recommendedTemplateId, suggestionsFor } from './data/dynamicSuggestions';
 import { EMPTY_RESUME, type ResumeData } from './types';
 
 const salesResume: ResumeData = {
@@ -32,10 +32,24 @@ describe('sugestões dinâmicas', () => {
     expect(summaries.some((summary) => summary.includes('primeira oportunidade'))).toBe(true);
   });
 
-  it('inclui frases prontas de objetivo no passo alvo', () => {
+  it('limita sugestoes principais do alvo e guarda frases nos extras', () => {
     const suggestions = suggestionsFor('targetRole', salesResume) ?? [];
-    expect(suggestions.some((item) => item.startsWith('Sou iniciante na carreira'))).toBe(true);
-    expect(suggestions.length).toBeGreaterThan(20);
+    expect(suggestions.length).toBeGreaterThan(0);
+    expect(suggestions.length).toBeLessThanOrEqual(4);
+    expect(suggestions.some((role) => /vendas|comercial/i.test(role))).toBe(true);
+
+    const extras = extraSuggestionsFor('targetRole');
+    expect(extras.some((item) => item.startsWith('Sou iniciante na carreira'))).toBe(true);
+  });
+
+  it('recomenda modelo conforme o momento de carreira', () => {
+    expect(recommendedTemplateId(EMPTY_RESUME)).toBe('ats');
+    expect(recommendedTemplateId(salesResume)).toBe('xyz');
+    const semConquista: ResumeData = {
+      ...salesResume,
+      experiences: [{ ...salesResume.experiences[0], achievement: '' }],
+    };
+    expect(recommendedTemplateId(semConquista)).toBe('classic');
   });
 
   it('sugere pacote de habilidades da area', () => {
