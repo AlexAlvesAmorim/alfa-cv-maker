@@ -1,0 +1,5 @@
+# Ferramentas de agente/skills instaladas — não são código do produto
+# (exclui da estatística de linguagens do GitHub sem remover do repo)
+.agents/** linguist-vendored
+.claude/** linguist-vendored
+.impeccable/** linguist-vendored
