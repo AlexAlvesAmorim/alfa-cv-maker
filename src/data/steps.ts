@@ -3,38 +3,32 @@ import { TEMPLATES } from './templates';
 
 export const WELCOME_MESSAGE =
   'Bem-vindo ao Alfa Curriculum Maker! Eu sou o assistente que vai montar o seu currículo. '
-  + 'É só conversar comigo: eu faço as perguntas, sugiro alternativas prontas com base nas suas respostas e, '
-  + 'no final, você baixa o currículo em PDF ou DOCX no modelo que escolher.';
+  + 'São 9 passos rapidinhos (uns 5 minutos), grátis e sem cadastro — e se você já tem um currículo pronto, dá para importar o arquivo em vez de digitar tudo. '
+  + 'No final, você baixa o currículo em PDF ou DOCX no modelo que escolher.';
 
 export const STEPS: ChatStep[] = [
   {
     id: 'fullName',
-    question: 'Pra começar: qual é o seu nome completo? (só o nome, sem "meu nome é")',
-    placeholder: 'Digite seu nome completo...',
-    suggestions: ['Maria Oliveira Santos', 'João Pedro Almeida'],
+    question: 'Pra começar: qual é o seu nome completo?',
+    placeholder: 'Ex.: Maria Silva Oliveira...',
+    suggestions: [],
   },
   {
     id: 'contact',
     question:
-      'Prazer! Agora seus dados de contato — eles aparecem logo abaixo do nome, nesta ordem:\ntelefone | e-mail | cidade/endereço | LinkedIn\n\nSepare com barras ( | ), por favor.',
-    placeholder: 'Ex.: (11) 98888-7777 | maria@email.com | São Paulo/SP | linkedin.com/in/maria',
-    suggestions: ['(11) 98888-7777 | maria@email.com | São Paulo/SP'],
+      'Prazer! Agora seus dados de contato — eles aparecem logo abaixo do seu nome no currículo.\n\n'
+      + 'Preencha o formulário abaixo: telefone e e-mail são os canais que o recrutador mais usa para chamar.',
+    placeholder: 'Use o formulário acima...',
+    suggestions: [],
   },
   {
     id: 'experiences',
     question:
       'Vamos às experiências! Preencha o formulário abaixo (cargo, empresa, período e conquista).\n\n'
-      + 'Dica de ouro — fórmula XYZ do Google: na conquista, escreva "Conquistei [resultado], medido por [número], fazendo [ação]".',
+      + 'Dica de ouro — fórmula XYZ do Google: na conquista, escreva "Conquistei [resultado], medido por [número], fazendo [ação]".\n\n'
+      + 'Ex.: Atendente — Padaria Pão Dourado (2023–2025): aumentei a venda de combos em 20% com atendimento consultivo.',
     placeholder: 'Use o formulário acima...',
     suggestions: [],
-  },
-  {
-    id: 'layout',
-    question:
-      'Agora o visual: com base no que você me contou, destaquei abaixo o modelo que mais combina com o seu momento de carreira.\n\n'
-      + 'Toque em um card para ver o exemplo preenchido antes de escolher.',
-    placeholder: 'Escolha um modelo acima...',
-    suggestions: TEMPLATES.map((template) => template.value),
   },
   {
     id: 'targetRole',
@@ -55,6 +49,14 @@ export const STEPS: ChatStep[] = [
       + 'Escolha uma sugestão ou escreva o seu:',
     placeholder: 'Ou digite seu próprio resumo...',
     suggestions: [],
+  },
+  {
+    id: 'layout',
+    question:
+      'Agora o visual: com base no seu objetivo e experiências, destaquei abaixo o modelo que mais combina com o seu momento.\n\n'
+      + 'Dica: selo ATS ✓ = passa em robôs (Gupy/Kenoby), Visual = bonito mas pode falhar no robô. Toque num card para escolher — ou em "Ver exemplo" para espiar antes.',
+    placeholder: 'Escolha um modelo acima...',
+    suggestions: TEMPLATES.map((template) => template.value),
   },
   {
     id: 'education',
@@ -80,9 +82,8 @@ export const STEPS: ChatStep[] = [
   {
     id: 'photo',
     question:
-      'Quer adicionar uma foto? Eu removo o fundo automaticamente e enquadro no formato 3x4 (padrão para currículos).\n\n'
-      + 'Dica: posicione o rosto centralizado, como numa foto 3x4 de documento. '
-      + 'Ela entra na barra lateral do modelo Moderno.',
+      'Quer adicionar uma foto? Eu removo o fundo automaticamente e enquadro no formato 3x4 — foto de documento 3cm×4cm com rosto centralizado.\n\n'
+      + 'Dica: use foto frontal com boa luz. Ela entra na barra lateral do modelo Moderno; nos outros modelos aparece no topo. Totalmente opcional.',
     placeholder: 'Use o botão abaixo ou pule esta etapa...',
     optional: true,
     suggestions: [],
@@ -94,3 +95,18 @@ export const FINISH_MESSAGE =
   + '• PDF — layout finalizado, pronto para enviar ou imprimir\n'
   + '• DOCX — editável no Word/Google Docs, caso queira ajustar algo\n\n'
   + 'Confira os dados no painel abaixo e baixe no modelo que você escolheu.';
+
+export const PHASES = [
+  { name: 'Você', steps: [0, 1] },
+  { name: 'Trajetória', steps: [2, 3, 4] },
+  { name: 'Modelo', steps: [5] },
+  { name: 'Detalhes', steps: [6, 7, 8] },
+  { name: 'Foto', steps: [9] },
+] as const;
+
+export function phaseForStep(stepIndex: number, finished: boolean): string {
+  if (finished) return 'Pronto para enviar';
+  const phaseIndex = PHASES.findIndex((phase) => (phase.steps as readonly number[]).includes(stepIndex));
+  if (phaseIndex < 0) return `Fase 1 de ${PHASES.length} · Você`;
+  return `Fase ${phaseIndex + 1} de ${PHASES.length} · ${PHASES[phaseIndex].name}`;
+}

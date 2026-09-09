@@ -23,6 +23,9 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
   const [example, setExample] = useState<ExampleState | null>(null);
   const [showAll, setShowAll] = useState(false);
 
+  const recommendedValue = TEMPLATES.find((template) => template.id === recommended)?.value ?? '';
+  const [pending, setPending] = useState(selected || recommendedValue);
+
   const orderedTemplates = useMemo(() => {
     if (!recommended) return TEMPLATES;
     const index = TEMPLATES.findIndex((template) => template.id === recommended);
@@ -33,6 +36,8 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
   }, [recommended]);
 
   const visibleTemplates = showAll ? orderedTemplates : orderedTemplates.slice(0, VISIBLE_CARDS);
+  const pendingTemplate = TEMPLATES.find((template) => template.value === pending);
+  const pendingIsAts = pendingTemplate ? pendingTemplate.kind === 'ats' : true;
 
   async function openExample(value: string, label: string) {
     const { buildResumePdf } = await import('../utils/pdfExport');
@@ -58,17 +63,22 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
     <>
       <div className="template-picker" role="group" aria-label="Modelos de currículo">
         {visibleTemplates.map((template) => {
-          const isSelected = selected === template.value;
+          const isSelected = pending === template.value;
           const isRecommended = recommended === template.id;
+          const isAts = template.kind === 'ats';
           return (
             <div
               key={template.id}
-              className={`template-card ${isSelected ? 'template-card--selected' : ''} ${isRecommended ? 'template-card--recommended' : ''}`}
+              className={`template-card ${isSelected ? 'template-card--selected' : ''} ${isRecommended ? 'template-card--recommended' : ''} ${!isAts ? 'template-card--visual' : ''}`}
+              title={template.atsNote ?? undefined}
             >
+              <span className={`template-card__kind ${isAts ? 'template-card__kind--ats' : 'template-card__kind--visual'}`}>
+                {isAts ? 'ATS ✓' : 'Visual'}
+              </span>
               {isSelected && <span className="template-card__badge">Escolhido</span>}
               {!isSelected && isRecommended && (
                 <span className="template-card__badge template-card__badge--recommended">
-                  Recomendado para você
+                  ★ Recomendado
                 </span>
               )}
               <button
@@ -76,13 +86,14 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
                 aria-pressed={isSelected}
                 disabled={disabled}
                 className="template-card__select"
-                onClick={() => onPick(template.value)}
+                aria-label={`Modelo ${template.label}${isRecommended ? ' — recomendado para o seu perfil' : ''}${isSelected ? ' — escolhido' : ''}`}
+                onClick={() => setPending(template.value)}
               >
                 <span className="template-card__thumb" aria-hidden="true">
                   <TemplateThumb id={template.id} />
                 </span>
                 <span className="template-card__label">{template.label}</span>
-                <span className="template-card__desc">{template.description}</span>
+                <span className="template-card__desc">{template.description}{template.atsNote ? ` — ${template.atsNote}` : ''}</span>
               </button>
               <button
                 type="button"
@@ -103,6 +114,23 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
           >
             Ver todos os modelos ({orderedTemplates.length}) ↓
           </button>
+        )}
+      </div>
+      <div className="template-continue">
+        <button
+          type="button"
+          className="btn btn--primary template-continue__btn"
+          disabled={disabled || pending === ''}
+          onClick={() => {
+            if (pending !== '') onPick(pending);
+          }}
+        >
+          {pendingTemplate ? `Continuar com ${pendingTemplate.label}` : 'Escolha um modelo acima'}
+        </button>
+        {pendingTemplate && (
+          <p className="template-continue__note">
+            {pendingIsAts ? 'Passa nos robôs de triagem (Gupy, Kenoby) ✓' : 'Visual bonito — pode falhar no robô de triagem'}
+          </p>
         )}
       </div>
       {example && (

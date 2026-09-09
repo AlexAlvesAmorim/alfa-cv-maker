@@ -12,6 +12,7 @@ interface SummaryCardProps {
   onRestart: () => void;
   onEditField: (field: ResumeField) => void;
   onAccentChange: (hex: string) => void;
+  onGoMatch: () => void;
 }
 
 const FIELD_LABELS: Array<{ key: 'fullName' | 'targetRole' | 'layout' | 'contact' | 'summary' | 'education' | 'skills' | 'languages'; label: string }> = [
@@ -25,7 +26,7 @@ const FIELD_LABELS: Array<{ key: 'fullName' | 'targetRole' | 'layout' | 'contact
   { key: 'languages', label: 'Idiomas' },
 ];
 
-export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: SummaryCardProps) {
+export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, onGoMatch }: SummaryCardProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ text: string; tone: 'error' | 'info' } | null>(null);
   const [emailBusy, setBusy] = useState<'email' | 'letter' | null>(null);
@@ -38,7 +39,14 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
   const [importedResume, setImportedResume] = useState<ResumeData | null>(null);
   const [analysisTarget, setAnalysisTarget] = useState<'maker' | 'imported'>('maker');
   const [comparison, setComparison] = useState<{ maker: number; imported: number | null } | null>(null);
+  const [truncatedNotice, setTruncatedNotice] = useState('');
+  const [downloadedEver, setDownloadedEver] = useState(false);
   const downloadedTimerRef = useRef<number | null>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -60,6 +68,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
         await downloadResumeDocx(resume);
       }
       setDownloaded(kind);
+      setDownloadedEver(true);
       if (downloadedTimerRef.current !== null) window.clearTimeout(downloadedTimerRef.current);
       downloadedTimerRef.current = window.setTimeout(() => setDownloaded(null), 2500);
       setNotice({
@@ -113,8 +122,9 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
     }
   }
 
-  async function handleAnalyze() {
+  async function performAnalysis(target: 'maker' | 'imported', importedData: ResumeData | null) {
     setFetchError(null);
+    setTruncatedNotice('');
     let description = jobDescription;
     const url = extractFirstUrl(description);
     if (url && description.trim().length < 400) {
@@ -122,7 +132,11 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
       try {
         description = await resolveJobDescription(description);
         if (description.trim().length < 20) throw new Error('thin');
-        setJobDescription(description.slice(0, 4000));
+        if (description.length > 4000) {
+          description = description.slice(0, 4000);
+          setTruncatedNotice('Descrição longa — analisamos os primeiros 4.000 caracteres.');
+        }
+        setJobDescription(description);
       } catch {
         setFetchError(
           'Não conseguimos ler o anúncio por esse link — alguns sites bloqueiam a leitura automática. '
@@ -135,15 +149,26 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
     }
 
     const makerResult = analyzeForJob(resume, description);
-    const importedResult = importedResume ? analyzeForJob(importedResume, description) : null;
-    const selectedIsImported = analysisTarget === 'imported' && importedResult !== null;
+    const importedResult = importedData ? analyzeForJob(importedData, description) : null;
+    const selectedIsImported = target === 'imported' && importedResult !== null;
     setAtsResult(selectedIsImported ? importedResult : makerResult);
     setComparison({ maker: makerResult.score, imported: importedResult ? importedResult.score : null });
   }
 
+  function selectTarget(target: 'maker' | 'imported') {
+    setAnalysisTarget(target);
+    if (jobDescription.trim().length >= 20) {
+      void performAnalysis(target, importedResume);
+    }
+  }
+
   function handleCompareImport(result: { fields: Partial<ResumeData> }) {
-    setImportedResume({ ...EMPTY_RESUME, ...result.fields });
+    const built = { ...EMPTY_RESUME, ...result.fields };
+    setImportedResume(built);
     setAnalysisTarget('imported');
+    if (jobDescription.trim().length >= 20) {
+      void performAnalysis('imported', built);
+    }
   }
 
   function removeComparison() {
@@ -153,18 +178,73 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
   }
 
   return (
-    <section className="summary-card">
-      <h2 className="summary-card__title">Pronto! Seu currículo está completo.</h2>
-      <p className="summary-card__hint">Revise abaixo, baixe no formato que precisar e, se quiser, ajuste qualquer campo com um clique.</p>
+    <section className="summary-card" aria-label="Currículo pronto">
+      <div className={`summary-card__hero ${downloadedEver ? 'summary-card__hero--celebrated' : ''}`}>
+        <h2 ref={titleRef} tabIndex={-1} className="summary-card__title">
+          {downloadedEver ? 'Currículo na mão ✓' : 'Pronto! Seu currículo está completo.'}
+        </h2>
+        <p className="summary-card__hint">Baixe agora — revise abaixo se quiser ajustar antes de enviar.</p>
+        <button type="button" className="btn btn--primary btn--hero" onClick={() => void handleDownload('pdf')}>
+          {downloaded === 'pdf' ? 'Baixado ✓' : 'Baixar PDF'}
+        </button>
+        <div className="summary-card__secondary">
+          <button type="button" className="btn btn--outline" onClick={() => void handlePreview()}>
+            Pré-visualizar
+          </button>
+          <button type="button" className="btn btn--outline" onClick={() => void handleDownload('docx')}>
+            {downloaded === 'docx' ? 'Baixado ✓' : 'Baixar DOCX'}
+          </button>
+        </div>
+        <details className="summary-card__more">
+          <summary>Mais opções de envio</summary>
+          <div className="summary-card__more-actions">
+            <button type="button" className="btn btn--outline" disabled={emailBusy !== null} onClick={() => void handleEmail()}>
+              {emailBusy === 'email' ? 'Abrindo e-mail...' : 'Enviar por e-mail'}
+            </button>
+            <button type="button" className="btn btn--outline" disabled={emailBusy !== null} onClick={() => void handleCoverLetter()}>
+              {emailBusy === 'letter' ? 'Gerando...' : 'Carta de apresentação'}
+            </button>
+          </div>
+        </details>
+        {!downloaded && (
+          <p className="summary-card__hint summary-card__hint--tip" role="note">
+            Dica: use Pré-visualizar para conferir antes de baixar.
+          </p>
+        )}
+        {notice && (
+          <p role="status" className={`summary-card__notice ${notice.tone === 'error' ? 'is-error' : ''}`}>
+            {notice.text}
+          </p>
+        )}
+        {downloadedEver && (
+          <div className="summary-card__next">
+            <p className="summary-card__next-text">
+              <strong>Último passo antes de enviar:</strong> teste o encaixe do seu currículo com a vaga — palavra por palavra.
+            </p>
+            <button type="button" className="btn btn--primary" onClick={onGoMatch}>
+              Testar no Alfa Match
+            </button>
+          </div>
+        )}
+      </div>
 
-      <section className="summary-card__zone" aria-label="Seu currículo">
-        <h3 className="summary-card__zone-title">Seu currículo</h3>
+      <details className="summary-card__review">
+        <summary className="summary-card__review-summary">
+          <span>Seu currículo</span>
+          <span className="summary-card__review-hint">10 campos · toque para revisar</span>
+        </summary>
+        <div className="summary-card__review-body">
         <dl className="summary-card__grid">
           {FIELD_LABELS.map(({ key, label }) => (
             <div className="summary-card__item" key={key}>
               <dt>{label}</dt>
               <dd>
-                <button type="button" className="summary-card__edit" onClick={() => onEditField(key)}>
+                <button
+                  type="button"
+                  className="summary-card__edit"
+                  onClick={() => onEditField(key)}
+                  aria-label={`Editar ${label}: ${resume[key] || 'não informado'}`}
+                >
                   {resume[key] || 'Não informado'}
                 </button>
                 {key === 'contact' && contactMissingEmail && (
@@ -178,7 +258,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
           <div className="summary-card__item">
             <dt>Experiências</dt>
             <dd>
-              <button type="button" className="summary-card__edit" onClick={() => onEditField('experiences')}>
+              <button type="button" className="summary-card__edit" onClick={() => onEditField('experiences')} aria-label={`Editar Experiências: ${resume.experiences.length > 0 ? resume.experiences.map((experience) => experience.role).join(', ') : 'não informadas'}`}>
                 {resume.experiences.length > 0
                   ? resume.experiences.map((experience) => experience.role).join(', ')
                   : 'Não informadas'}
@@ -188,7 +268,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
           <div className="summary-card__item">
             <dt>Foto 3x4</dt>
             <dd>
-              <button type="button" className="summary-card__edit" onClick={() => onEditField('photo')}>
+              <button type="button" className="summary-card__edit" onClick={() => onEditField('photo')} aria-label={`Editar Foto 3x4: ${resume.photo ? 'adicionada' : 'não adicionada'}`}>
                 {resume.photo ? 'Adicionada' : 'Não adicionada — clicar para adicionar'}
               </button>
             </dd>
@@ -221,39 +301,16 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
             ))}
           </div>
         </div>
-      </section>
-
-      <section className="summary-card__zone" aria-label="Baixar e compartilhar">
-        <h3 className="summary-card__zone-title">Baixar e compartilhar</h3>
-        <div className="summary-card__actions">
-          <button type="button" className="btn btn--primary" onClick={() => void handleDownload('pdf')}>
-            {downloaded === 'pdf' ? 'Baixado ✓' : 'Baixar PDF'}
-          </button>
-          <button type="button" className="btn btn--outline" onClick={() => void handlePreview()}>
-            Pré-visualizar
-          </button>
-          <button type="button" className="btn btn--outline" onClick={() => void handleDownload('docx')}>
-            {downloaded === 'docx' ? 'Baixado ✓' : 'Baixar DOCX'}
-          </button>
-          <button type="button" className="btn btn--outline" disabled={emailBusy !== null} onClick={() => void handleEmail()}>
-            {emailBusy === 'email' ? 'Abrindo e-mail...' : 'Enviar por e-mail'}
-          </button>
-          <button type="button" className="btn btn--outline" disabled={emailBusy !== null} onClick={() => void handleCoverLetter()}>
-            {emailBusy === 'letter' ? 'Gerando...' : 'Carta de apresentação'}
-          </button>
         </div>
-        {notice && (
-          <p role="status" className={`summary-card__notice ${notice.tone === 'error' ? 'is-error' : ''}`}>
-            {notice.text}
-          </p>
-        )}
-      </section>
+      </details>
 
-      <section className="summary-card__zone ats-analyzer" aria-label="Analisador de vaga">
-        <h3 className="ats-analyzer__title">Analisar compatibilidade com a vaga (score ATS)</h3>
+      <details className="summary-card__ats-toggle">
+        <summary>Já baixou? Analise a compatibilidade com a vaga <span style={{fontWeight:400, color:'var(--text-muted)'}}>— opcional, ATS explica o encaixe palavra a palavra</span></summary>
+        <section className="summary-card__zone ats-analyzer" aria-label="Analisador de vaga">
+        <h3 className="ats-analyzer__title">Alfa Match — score ATS da vaga</h3>
         <p className="ats-analyzer__hint">
-          Cole a descrição da vaga — ou só o link do anúncio (LinkedIn, Gupy, Catho, Nerdin...) — e veja o quão
-          alinhado seu currículo está com as palavras-chave dela.
+          ATS é o robô que filtra currículos antes do RH. Cole a descrição da vaga — ou só o link (LinkedIn, Gupy, Catho) — e veja o quão
+          alinhado seu currículo está. Só inclua no currículo o que for verdade sobre você.
         </p>
         <textarea
           className="ats-analyzer__input"
@@ -264,8 +321,8 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
           aria-label="Descrição ou link da vaga"
         />
         {fetchError && (
-          <p className="summary-card__warn" role="status">
-            {fetchError}
+          <p className="summary-card__warn" role="alert">
+            {fetchError} <button type="button" className="chip" style={{marginLeft:8}} onClick={() => void performAnalysis(analysisTarget, importedResume)}>Tentar novamente</button>
           </p>
         )}
         {!importedResume && <ImportResume variant="compare" onImported={handleCompareImport} />}
@@ -274,14 +331,14 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
             <button
               type="button"
               aria-pressed={analysisTarget === 'maker'}
-              onClick={() => setAnalysisTarget('maker')}
+              onClick={() => selectTarget('maker')}
             >
               Criado no Maker
             </button>
             <button
               type="button"
               aria-pressed={analysisTarget === 'imported'}
-              onClick={() => setAnalysisTarget('imported')}
+              onClick={() => selectTarget('imported')}
             >
               Meu PDF importado
             </button>
@@ -299,10 +356,15 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
           type="button"
           className="btn btn--outline"
           disabled={jobLength < 20 || fetchingJob}
-          onClick={() => void handleAnalyze()}
+          onClick={() => void performAnalysis(analysisTarget, importedResume)}
         >
           {fetchingJob ? 'Buscando a vaga...' : 'Analisar compatibilidade'}
         </button>
+        {truncatedNotice && (
+          <p className="ats-analyzer__requirement" role="status">
+            {truncatedNotice}
+          </p>
+        )}
         {jobLength < 20 && !fetchingJob && (
           <p className="ats-analyzer__requirement" role="status">
             {jobLength === 0
@@ -312,32 +374,40 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
         )}
         <div aria-live="polite">
           {comparison && comparison.imported !== null && (
-            <div className="summary-card__compare">
-              <div
-                className={`compare-pill ${comparison.maker >= comparison.imported ? 'compare-pill--winner' : ''}`}
-              >
-                <span className="compare-pill__label">Criado no Maker</span>
-                <span className="compare-pill__score">{comparison.maker}%</span>
-                {comparison.maker >= comparison.imported && (
-                  <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
-                )}
+            <>
+              <div className="summary-card__compare">
+                <div
+                  className={`compare-pill ${comparison.maker > comparison.imported ? 'compare-pill--winner' : ''}`}
+                >
+                  <span className="compare-pill__label">Criado no Maker</span>
+                  <span className="compare-pill__score">{comparison.maker}%</span>
+                  {comparison.maker > comparison.imported && (
+                    <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
+                  )}
+                </div>
+                <div
+                  className={`compare-pill ${comparison.imported > comparison.maker ? 'compare-pill--winner' : ''}`}
+                >
+                  <span className="compare-pill__label">Meu PDF importado</span>
+                  <span className="compare-pill__score">{comparison.imported}%</span>
+                  {comparison.imported > comparison.maker && (
+                    <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
+                  )}
+                </div>
               </div>
-              <div
-                className={`compare-pill ${comparison.imported > comparison.maker ? 'compare-pill--winner' : ''}`}
-              >
-                <span className="compare-pill__label">Meu PDF importado</span>
-                <span className="compare-pill__score">{comparison.imported}%</span>
-                {comparison.imported > comparison.maker && (
-                  <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
-                )}
-              </div>
-            </div>
+              {comparison.maker === comparison.imported && (
+                <p className="ats-analyzer__requirement" role="status">
+                  Empate técnico — os dois currículos têm o mesmo score nesta vaga.
+                </p>
+              )}
+            </>
           )}
           {atsResult && <AtsReport result={atsResult} />}
         </div>
-      </section>
+        </section>
+      </details>
 
-      <footer className="summary-card__danger">
+      <footer className="summary-card__danger summary-card__danger--subtle">
         {confirmRestart ? (
           <>
             <span role="alert">Isso apaga tudo que você preencheu neste navegador.</span>
@@ -345,11 +415,11 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange }: 
               Sim, apagar tudo
             </button>
             <button type="button" className="btn btn--outline" onClick={() => setConfirmRestart(false)}>
-              Não, manter meu currículo
+              Não, manter
             </button>
           </>
         ) : (
-          <button type="button" className="btn btn--ghost" onClick={() => setConfirmRestart(true)}>
+          <button type="button" className="summary-card__restart-link" onClick={() => setConfirmRestart(true)}>
             Recomeçar do zero
           </button>
         )}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { Experience } from '../types';
 
 interface ExperienceFormProps {
@@ -12,6 +12,9 @@ const EMPTY_FIELD: Experience = { role: '', company: '', period: '', achievement
 export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProps) {
   const [list, setList] = useState<Experience[]>(initial);
   const [draft, setDraft] = useState<Experience>(EMPTY_FIELD);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
 
   const draftIsFilled = draft.role.trim() !== '' || draft.company.trim() !== '';
 
@@ -31,6 +34,7 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
       },
     ]);
     setDraft(EMPTY_FIELD);
+    firstInputRef.current?.focus();
   }
 
   function saveAndContinue() {
@@ -50,16 +54,25 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
 
   function removeExperience(index: number) {
     setList((current) => current.filter((_, i) => i !== index));
+    requestAnimationFrame(() => {
+      listRef.current?.focus();
+    });
   }
 
   return (
     <div className="exp-form">
+      <p className="exp-form__example">
+        Ex.: Atendente — Padaria Pão Dourado (2023–2025): aumentei a venda de combos em 20%.
+      </p>
       <div className="exp-form__grid">
         <input
+          ref={firstInputRef}
+          autoFocus
           className="exp-form__input"
           placeholder="Cargo *"
           value={draft.role}
           disabled={disabled}
+          maxLength={80}
           onChange={(event) => updateDraft('role', event.target.value)}
           aria-label="Cargo"
         />
@@ -68,6 +81,7 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
           placeholder="Empresa *"
           value={draft.company}
           disabled={disabled}
+          maxLength={80}
           onChange={(event) => updateDraft('company', event.target.value)}
           aria-label="Empresa"
         />
@@ -76,12 +90,14 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
           placeholder="Período (ex.: 2023-2025)"
           value={draft.period}
           disabled={disabled}
+          maxLength={30}
           onChange={(event) => updateDraft('period', event.target.value)}
           aria-label="Período"
         />
         <input
           className="exp-form__input exp-form__input--wide"
           placeholder="Conquista (fórmula XYZ: resultado medido + ação)"
+          maxLength={200}
           value={draft.achievement}
           disabled={disabled}
           onChange={(event) => updateDraft('achievement', event.target.value)}
@@ -89,8 +105,8 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
         />
       </div>
       <div className="exp-form__actions">
-        <button type="button" className="chip" onClick={addExperience} disabled={disabled}>
-          + Adicionar experiência
+        <button ref={addButtonRef} type="button" className="chip" onClick={addExperience} disabled={disabled || !draftIsFilled}>
+          + Adicionar mais uma
         </button>
         {(list.length > 0 || draftIsFilled) && (
           <button
@@ -99,8 +115,8 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
             onClick={saveAndContinue}
             disabled={disabled}
           >
-            Salvar {list.length + (draftIsFilled ? 1 : 0)} experiência
-            {list.length + (draftIsFilled ? 1 : 0) > 1 ? 's' : ''} e continuar
+            Continuar com {list.length + (draftIsFilled ? 1 : 0)} experiência
+            {list.length + (draftIsFilled ? 1 : 0) > 1 ? 's' : ''}
           </button>
         )}
         {list.length === 0 && !draftIsFilled && (
@@ -115,10 +131,10 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
         )}
       </div>
       {list.length > 0 && (
-        <ul className="exp-form__list">
+        <ul ref={listRef} tabIndex={-1} className="exp-form__list" aria-label="Experiências adicionadas" aria-live="polite">
           {list.map((experience, index) => (
             <li key={`${experience.role}-${index}`}>
-              <span>
+              <span className="wrap">
                 <strong>{experience.role}</strong>
                 {experience.company ? ` — ${experience.company}` : ''}
                 {experience.period ? ` (${experience.period})` : ''}

@@ -3,11 +3,12 @@ import { Logo } from './Logo';
 interface HeaderProps {
   step: number;
   totalSteps: number;
+  phase: string;
   mode: 'chat' | 'match';
   onModeChange: (mode: 'chat' | 'match') => void;
 }
 
-export function Header({ step, totalSteps, mode, onModeChange }: HeaderProps) {
+export function Header({ step, totalSteps, phase, mode, onModeChange }: HeaderProps) {
   const progress = Math.round((step / totalSteps) * 100);
   const inChat = mode === 'chat';
 
@@ -21,7 +22,7 @@ export function Header({ step, totalSteps, mode, onModeChange }: HeaderProps) {
           <h1 className="header__title">
             Alfa <span>Curriculum Maker</span>
           </h1>
-          <p className="header__subtitle">
+          <p className="header__subtitle" aria-live="polite">
             {inChat ? 'Monte seu currículo apenas conversando' : 'Alfa Match — o encaixe entre currículo e vaga'}
           </p>
         </div>
@@ -35,12 +36,12 @@ export function Header({ step, totalSteps, mode, onModeChange }: HeaderProps) {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}
-            aria-label={`Etapa ${step} de ${totalSteps}`}
+            aria-label={`${phase} — etapa ${step} de ${totalSteps}`}
           >
             <div className="header__progress-bar">
               <div className="header__progress-fill" style={{ transform: `scaleX(${progress / 100})` }} />
             </div>
-            <span className="header__progress-label">{step}/{totalSteps}</span>
+            <span className="header__progress-label">{phase} · {step}/{totalSteps}</span>
           </div>
         )}
         <button
