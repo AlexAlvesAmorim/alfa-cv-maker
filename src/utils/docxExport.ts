@@ -223,6 +223,57 @@ function buildAtsChildren(resume: ResumeData): (Paragraph | Table)[] {
   return children;
 }
 
+/* ---------- ATS DEV (inspirado PDF Alex - sem tabela, stack inline) ---------- */
+
+function buildAtsDevChildren(resume: ResumeData): (Paragraph | Table)[] {
+  const children: (Paragraph | Table)[] = [
+    centered((resume.fullName || 'Nome não informado').toUpperCase(), { size: 40, bold: true, color: '000000', after: 40 }),
+  ];
+  if (resume.targetRole.trim()) {
+    children.push(centered(resume.targetRole.trim(), { size: 21, bold: true, color: '33404F', after: 60 }));
+  }
+  const contacts = orderedContactParts(resume.contact);
+  if (contacts.length > 0) {
+    children.push(centered(contacts.join('  |  '), { size: 17, color: '6E5F61', after: 40 }));
+  }
+  children.push(
+    new Paragraph({
+      border: { bottom: { style: BorderStyle.SINGLE, size: 5, color: '000000', space: 4 } },
+      spacing: { after: 180 },
+      children: [],
+    }),
+  );
+  if (resume.summary.trim()) {
+    children.push(heading('Resumo Profissional', '000000', { size: 24, ruleColor: '000000', upper: true }));
+    children.push(paragraph([run(resume.summary.trim(), { color: '282828' })], 160));
+  }
+  for (const section of buildSections(resume)) {
+    if (section.title === 'Experiência Profissional') {
+      children.push(heading('Experiência Profissional', '000000', { size: 24, ruleColor: '000000', upper: true }));
+      for (const item of section.items) {
+        const colonIdx = item.indexOf(':');
+        const head = colonIdx > 0 ? item.slice(0, colonIdx).trim() : item;
+        const body = colonIdx > 0 ? item.slice(colonIdx + 1).trim() : '';
+        children.push(paragraph([run(head, { bold: true, color: '2E2E2C' })], 60));
+        if (body) children.push(bullet(body, '372D2F'));
+      }
+    }
+    if (section.title === 'Formação Acadêmica') {
+      children.push(heading('Formação Acadêmica', '000000', { size: 24, ruleColor: '000000', upper: true }));
+      for (const item of section.items) children.push(bullet(item, '282828'));
+    }
+    if (section.title === 'Habilidades') {
+      children.push(heading('Habilidades', '000000', { size: 24, ruleColor: '000000', upper: true }));
+      children.push(paragraph([run(section.items.join('  •  '), { color: '282828' })], 140));
+    }
+    if (section.title === 'Idiomas') {
+      children.push(heading('Idiomas', '000000', { size: 24, ruleColor: '000000', upper: true }));
+      children.push(paragraph([run(section.items.join('   |   '), { color: '282828' })], 140));
+    }
+  }
+  return children;
+}
+
 /* ---------- XYZ (padrão Sofia) ---------- */
 
 function buildXyzChildren(resume: ResumeData): (Paragraph | Table)[] {
@@ -655,6 +706,7 @@ export async function buildResumeDocx(resume: ResumeData): Promise<Blob> {
   const docByTemplate: Record<string, Document> = {
     classic: baseDocument('Times New Roman', buildClassicChildren(resume)),
     ats: baseDocument('Calibri', buildAtsChildren(resume)),
+    'ats-dev': baseDocument('Calibri', buildAtsDevChildren(resume)),
     xyz: baseDocument('Calibri', buildXyzChildren(resume)),
     canva: buildCanvaDoc(resume),
     executivo: buildExecutivoDoc(resume),

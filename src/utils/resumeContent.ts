@@ -1,6 +1,6 @@
 import type { Experience, ResumeData } from '../types';
 
-export type TemplateId = 'classic' | 'ats' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal';
+export type TemplateId = 'classic' | 'ats' | 'ats-dev' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal';
 
 export interface ResumeSection {
   title: string;
@@ -59,6 +59,8 @@ export function rgbToHex(rgb: [number, number, number]): string {
 export function getTemplateId(layout: string): TemplateId {
   const value = layout.toLowerCase();
   if (value.includes('clássico') || value.includes('classico')) return 'classic';
+  // ats-dev deve ser testado antes de 'ats' genérico para não colidir
+  if (value.includes('ats-dev') || value.includes('ats dev') || value.includes('dev ats')) return 'ats-dev';
   if (value.includes('ats')) return 'ats';
   if (value.includes('xyz') || value.includes('google')) return 'xyz';
   if (value.includes('executivo')) return 'executivo';

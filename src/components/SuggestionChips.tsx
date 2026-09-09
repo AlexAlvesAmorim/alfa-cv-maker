@@ -21,6 +21,11 @@ export function SuggestionChips({ suggestions, extraSuggestions = [], optional, 
           {text}
         </button>
       ))}
+      {optional && (
+        <button type="button" className="chip chip--skip" onClick={() => onPick(SKIP_VALUE)}>
+          Pular esta etapa
+        </button>
+      )}
       {!expanded && extraSuggestions.length > 0 && (
         <button
           type="button"
@@ -36,9 +41,14 @@ export function SuggestionChips({ suggestions, extraSuggestions = [], optional, 
           {text}
         </button>
       ))}
-      {optional && (
-        <button type="button" className="chip chip--skip" onClick={() => onPick(SKIP_VALUE)}>
-          Pular esta etapa
+      {expanded && extraSuggestions.length > 0 && (
+        <button
+          type="button"
+          className="chip chip--more"
+          onClick={() => setExpanded(false)}
+          aria-label="Mostrar menos opções"
+        >
+          Menos opções ↑
         </button>
       )}
     </div>

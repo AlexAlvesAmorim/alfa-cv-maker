@@ -47,8 +47,11 @@ export function Modal({ title, onClose, footer, children }: ModalProps) {
     };
   }, [onClose]);
 
+  function onOverlayClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) onClose();
+  }
   return (
-    <div className="modal-overlay" onClick={onClose} role="presentation">
+    <div className="modal-overlay" role="presentation" onClick={onOverlayClick}>
       <div
         ref={dialogRef}
         className="modal"
@@ -56,7 +59,6 @@ export function Modal({ title, onClose, footer, children }: ModalProps) {
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
       >
         <div className="modal__header">
           <h2 className="modal__title">{title}</h2>

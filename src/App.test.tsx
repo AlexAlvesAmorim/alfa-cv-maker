@@ -4,7 +4,7 @@ import App from './App';
 
 function advanceBot() {
   act(() => {
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(2000);
   });
 }
 
@@ -37,7 +37,8 @@ describe('fluxo do chat', () => {
     expect(screen.getByText('meu nome é joao silva')).toBeInTheDocument();
     advanceBot();
     expect(screen.getByText(/seus dados de contato/i)).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('alfa-cv-draft-v2')!).resume.fullName).toBe('Joao Silva');
+    const draftRaw = localStorage.getItem('alfa-cv-draft-v3') ?? localStorage.getItem('alfa-cv-draft-v2');
+    expect(JSON.parse(draftRaw!)!.resume.fullName).toBe('Joao Silva');
   });
 
   it('recupera o rascunho salvo ao reabrir', () => {

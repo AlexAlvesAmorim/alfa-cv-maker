@@ -28,6 +28,22 @@ export interface ResumeData {
   accentColor: string;
 }
 
+// Constraint values for hardening (can be overridden per deployment)
+export const FIELD_CONSTRAINTS = {
+  fullName: { maxLength: 100, pattern: /^[A-Za-zÀ-ÿ'\s-]+$/ },
+  targetRole: { maxLength: 100, pattern: /^[A-Za-zÀ-ÿ0-9'\s\-/()]+$/ },
+  layout: { maxLength: 50 },
+  contact: { maxLength: 500, pattern: /^[^\n]+$/ },
+  summary: { maxLength: 2000 },
+  education: { maxLength: 1000 },
+  skills: { maxLength: 800 },
+  languages: { maxLength: 300 },
+  // dataURL PNG ~ 300KB-2MB base64; limite generoso para não bloquear foto válida
+  photo: { maxLength: 5_000_000 },
+  photoCircle: { maxLength: 5_000_000 },
+  accentColor: { pattern: /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/ },
+} as const;
+
 export type ResumeField = keyof ResumeData;
 
 export interface ChatStep {

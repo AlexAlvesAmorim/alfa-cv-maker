@@ -248,6 +248,37 @@ function Clean() {
   );
 }
 
+function AtsDev() {
+  return (
+    <Page>
+      <R x={40} y={18} w={130} h={11} c="#111" />
+      <R x={60} y={34} w={90} h={5} c="#33404F" />
+      <R x={30} y={46} w={150} h={3.5} c="#777" />
+      <rect x={16} y={56} width={178} height={1} fill="#111" />
+      <R x={16} y={66} w={52} h={5.5} c="#111" />
+      <rect x={16} y={74} width={178} height={0.8} fill="#111" />
+      {[80, 87, 94].map((y, index) => (
+        <R key={y} x={16} y={y} w={168 - index * 12} h={3.2} c="#777" />
+      ))}
+      <R x={16} y={110} w={62} h={5.5} c="#111" />
+      <rect x={16} y={118} width={178} height={0.8} fill="#111" />
+      {[0, 1, 2].map((index) => (
+        <g key={index}>
+          <R x={16} y={126 + index * 20} w={92} h={4} c="#111" />
+          <R x={16} y={132 + index * 20} w={70} h={3} c="#555" />
+          <C cx={18} cy={140 + index * 20} r={1.2} c="#111" />
+          <R x={22} y={138 + index * 20} w={160 - index * 15} h={3.2} c="#777" />
+        </g>
+      ))}
+      <R x={16} y={196} w={38} h={5.5} c="#111" />
+      <rect x={16} y={204} width={178} height={0.8} fill="#111" />
+      {[212, 219].map((y, index) => (
+        <R key={y} x={16} y={y} w={130 - index * 20} h={3.2} c="#777" />
+      ))}
+    </Page>
+  );
+}
+
 function Minimal() {
   return (
     <Page>
@@ -286,6 +317,7 @@ function Minimal() {
 const THUMBS: Record<string, () => React.JSX.Element> = {
   classic: Classic,
   ats: Ats,
+  'ats-dev': AtsDev,
   xyz: Xyz,
   canva: Moderno,
   executivo: Executivo,

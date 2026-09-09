@@ -327,6 +327,106 @@ function renderAts(doc: jsPDF, resume: ResumeData): void {
   }
 }
 
+/* ---------- ATS DEV (inspirado PDF Alex - single-column, 100% texto puro) ---------- */
+
+function renderAtsDev(doc: jsPDF, resume: ResumeData): void {
+  const marginX = 16;
+  const contentW = PAGE_W - marginX * 2;
+  const cursor: Cursor = { doc, y: 20 };
+  const sections = buildSections(resume);
+  const find = (title: string) => sections.find((section) => section.title === title);
+
+  // Header tipo PDF2: nome grande + subtítulo stack + contato em linha única (pipe)
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(...BLACK);
+  const name = (resume.fullName || 'Nome não informado').toUpperCase();
+  doc.text(name, PAGE_W / 2, cursor.y, { align: 'center' });
+  cursor.y += 7;
+
+  if (resume.targetRole.trim()) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...SLATE_HEAD);
+    doc.text(resume.targetRole.trim(), PAGE_W / 2, cursor.y, { align: 'center' });
+    cursor.y += 6;
+  }
+
+  const contacts = orderedContactParts(resume.contact);
+  if (contacts.length > 0) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    const contactLine = contacts.join('  |  ');
+    const lines = doc.splitTextToSize(contactLine, contentW) as string[];
+    lines.forEach((line: string) => {
+      doc.text(line, PAGE_W / 2, cursor.y, { align: 'center' });
+      cursor.y += 4;
+    });
+    cursor.y += 1;
+  }
+
+  // Linha fina divisória (como nos PDFs)
+  doc.setDrawColor(...DIVIDER);
+  doc.setLineWidth(0.35);
+  doc.line(marginX, cursor.y, marginX + contentW, cursor.y);
+  cursor.y += 8;
+
+  if (resume.summary.trim()) {
+    drawHeading(cursor, 'Resumo Profissional', marginX, contentW, BLACK, { centered: false, ruleColor: BLACK, size: 11, charSpace: 0.3, upper: true });
+    drawParagraph(cursor, resume.summary.trim(), marginX, contentW, BODY, { align: 'justify', size: 9.5 });
+    cursor.y += 1;
+  }
+
+  const experience = find('Experiência Profissional');
+  if (experience) {
+    // Usa título padrão ATS mas renderiza sem tabela, bullets compactos
+    drawHeading(cursor, 'Experiência Profissional', marginX, contentW, BLACK, { centered: false, ruleColor: BLACK, size: 11, charSpace: 0.3, upper: true });
+    // Cada experiência como: Role — Company (period): achievement como parágrafo justificado
+    experience.items.forEach((item) => {
+      ensureSpace(cursor, 10);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(...DARK2);
+      // Separa cabeçalho da conquista para manter keywords de stack visíveis
+      const colonIdx = item.indexOf(':');
+      const head = colonIdx > 0 ? item.slice(0, colonIdx).trim() : item;
+      const body = colonIdx > 0 ? item.slice(colonIdx + 1).trim() : '';
+      const headLines = doc.splitTextToSize(head, contentW) as string[];
+      headLines.forEach((line: string, idx: number) => {
+        doc.text(line, marginX, cursor.y + idx * 4.6);
+      });
+      cursor.y += headLines.length * 4.6 + 1.5;
+      if (body) {
+        drawParagraph(cursor, `• ${body}`, marginX + 2, contentW - 2, BODY, { size: 9.2 });
+        cursor.y -= 2; // compensa padding extra
+      } else {
+        cursor.y += 1;
+      }
+    });
+    cursor.y += 2;
+  }
+
+  const education = find('Formação Acadêmica');
+  if (education) {
+    drawHeading(cursor, 'Formação Acadêmica', marginX, contentW, BLACK, { centered: false, ruleColor: BLACK, size: 11, charSpace: 0.3, upper: true });
+    drawBullets(cursor, education.items, marginX, contentW, DARK2, null, { size: 9.5, dot: '•' });
+  }
+
+  const skills = find('Habilidades');
+  if (skills) {
+    drawHeading(cursor, 'Habilidades', marginX, contentW, BLACK, { centered: false, ruleColor: BLACK, size: 11, charSpace: 0.3, upper: true });
+    // ATS-safe: parágrafo inline com • , não colunas/tabela
+    drawParagraph(cursor, skills.items.join('  •  '), marginX, contentW, BODY, { size: 9.2 });
+  }
+
+  const languages = find('Idiomas');
+  if (languages) {
+    drawHeading(cursor, 'Idiomas', marginX, contentW, BLACK, { centered: false, ruleColor: BLACK, size: 11, charSpace: 0.3, upper: true });
+    drawParagraph(cursor, languages.items.join('   |   '), marginX, contentW, BODY, { size: 9.2 });
+  }
+}
+
 /* ---------- XYZ (padrão Sofia) ---------- */
 
 function renderXyz(doc: jsPDF, resume: ResumeData): void {
@@ -857,6 +957,9 @@ export function buildResumePdf(resume: ResumeData): Blob {
       break;
     case 'ats':
       renderAts(doc, resume);
+      break;
+    case 'ats-dev':
+      renderAtsDev(doc, resume);
       break;
     case 'xyz':
       renderXyz(doc, resume);

@@ -143,7 +143,7 @@ export function suggestionsFor(stepId: ResumeField, resume: ResumeData): string[
       (template) =>
         areas.has(template.area) || (hasNoFormalExperience(resume) && template.area === 'iniciante'),
     );
-    return [...matchedTemplates.slice(0, 2).map((template) => template.text), ...buildSummarySuggestions(resume)];
+    return [...matchedTemplates.slice(0, 2).map((template) => template.text), ...buildSummarySuggestions(resume)].slice(0, 4);
   }
 
   return null;
@@ -156,6 +156,9 @@ export function extraSuggestionsFor(stepId: ResumeField): string[] {
 
 export function recommendedTemplateId(resume: ResumeData): string {
   if (resume.experiences.length === 0) return 'ats';
+  const haystack = `${experienceText(resume)} ${resume.skills} ${resume.summary}`.toLowerCase();
+  const isTech = /react|typescript|node|electron|python|java|front|backend|dev|stack|github/i.test(haystack);
   const hasAchievements = resume.experiences.some((experience) => experience.achievement.trim() !== '');
+  if (isTech && resume.experiences.length >= 2) return 'ats-dev';
   return hasAchievements ? 'xyz' : 'classic';
 }

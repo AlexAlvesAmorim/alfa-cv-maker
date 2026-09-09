@@ -25,6 +25,7 @@ function KeywordGroup({
         {missing.map((keyword) => (
           <span className="ats-keyword ats-keyword--missing" key={`f-${keyword}`} title="Não encontrada no seu currículo">
             {keyword}
+            <span className="sr-only"> — ausente no seu currículo</span>
           </span>
         ))}
       </div>
@@ -47,7 +48,7 @@ export function AtsReport({ result }: { result: AtsResult }) {
         <p className="ats-strong">
           Encontrados com força nas suas habilidades e experiências:{' '}
           <strong>{result.strongMatches.slice(0, 8).join(', ')}</strong>
-          {result.strongMatches.length > 8 && ` +${result.strongMatches.length - 8}`}
+          {result.strongMatches.length > 8 && ` (+${result.strongMatches.length - 8} não listados)`}
         </p>
       )}
 
