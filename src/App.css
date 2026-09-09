@@ -32,9 +32,10 @@
 }
 
 .header__title {
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   line-height: 1.1;
 }
 
@@ -75,7 +76,8 @@
 }
 
 .header__progress-label {
-  font-size: 12px;
+  font-family: var(--font-stamp);
+  font-size: 11.5px;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -133,7 +135,9 @@
   flex-direction: column;
   gap: 12px;
   padding: 18px;
-  background: rgba(30, 9, 14, 0.55);
+  background-color: rgba(30, 9, 14, 0.55);
+  /* grain de papel — textura sutil sobre o fundo, motivo "documento" */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
   border: 1px solid var(--border-red);
   border-radius: var(--radius-lg);
   scrollbar-width: thin;
@@ -177,6 +181,8 @@
 .chat-message--bot .chat-message__bubble {
   background: var(--surface-2);
   border: 1px solid var(--border-red);
+  /* lombada do documento — marca a fala oficial do assistente */
+  border-left: 2px solid var(--red-blood);
   border-bottom-left-radius: 4px;
 }
 
@@ -444,20 +450,35 @@
 }
 
 .template-card__kind--ats {
-  color: #0a2e0a;
-  background: #34d17c;
+  color: var(--success);
+  background: rgba(8, 18, 10, 0.78);
+  border: 1.5px solid var(--success);
+  border-radius: 3px;
+  font-family: var(--font-stamp);
+  font-size: 10px;
+  transform: rotate(-2deg);
 }
 
 .template-card__kind--visual {
-  color: #f4ebea;
-  background: rgba(120, 40, 50, 0.9);
-  border-color: var(--border-red);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 3px;
+  font-family: var(--font-stamp);
+  font-size: 10px;
 }
 
 .template-card__badge--recommended {
-  color: var(--bg-900);
-  background: var(--success);
-  border: 1px solid transparent;
+  /* carimbo de verdade: vazado, mono, levemente torto — rima com o doc-rail */
+  color: var(--success);
+  background: rgba(8, 18, 10, 0.78);
+  border: 1.5px solid var(--success);
+  border-radius: 3px;
+  font-family: var(--font-stamp);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  transform: rotate(-4deg);
 }
 
 .template-card__select {
@@ -506,7 +527,8 @@
 }
 
 .template-card__label {
-  font-size: 13px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--text-main);
   transition: color 0.15s;
@@ -819,7 +841,7 @@
   color: var(--text-main);
   background: var(--red-bright);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   transition: background 0.15s;
 }
 
@@ -857,10 +879,11 @@
 
 .summary-card__title {
   margin-bottom: 6px;
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.015em;
-  line-height: 1.2;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
 .summary-card__hint {
@@ -879,11 +902,10 @@
 
 .summary-card__zone-title {
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  color: var(--text-main);
 }
 
 .summary-card__grid {
@@ -894,11 +916,10 @@
 
 .summary-card__item dt {
   margin-bottom: 5px;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  color: var(--text-main);
   line-height: 1.3;
 }
 
@@ -966,7 +987,7 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
 }
 
 .summary-card__secondary {
@@ -1073,7 +1094,8 @@
   padding: 9px 15px;
   font-size: 13px;
   font-weight: 600;
-  border-radius: var(--radius-sm);
+  /* ação oficial = canto afiado; chip conversacional segue arredondado */
+  border-radius: 4px;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
@@ -1192,10 +1214,11 @@
 }
 
 .ats-analyzer__title {
-  font-size: 15px;
+  font-family: var(--font-display);
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .ats-analyzer__hint {
@@ -1327,16 +1350,16 @@
 }
 
 .compare-pill__label {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  color: var(--text-main);
 }
 
 .compare-pill__score {
+  font-family: var(--font-stamp);
   font-size: 24px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text-main);
 }
@@ -1366,8 +1389,9 @@
 }
 
 .ats-verdict__score {
+  font-family: var(--font-stamp);
   font-size: 26px;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1422,11 +1446,10 @@
 
 .ats-group__title {
   margin-bottom: 7px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  color: var(--text-main);
 }
 
 .ats-group__keywords {
@@ -1523,8 +1546,9 @@
 }
 
 .alfa-match__panel-title {
-  font-size: 14px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
   color: var(--red-bright);
   letter-spacing: -0.01em;
 }
@@ -1549,11 +1573,10 @@
 }
 
 .alfa-match__field span {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted);
+  letter-spacing: 0.01em;
+  color: var(--text-main);
 }
 
 .alfa-match__report {
@@ -1861,6 +1884,7 @@ a.skip-link:not(:focus):not(:focus-visible) {
   right: 12px;
   bottom: 10px;
   padding: 3px 10px;
+  font-family: var(--font-stamp);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
