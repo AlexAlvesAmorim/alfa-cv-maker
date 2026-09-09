@@ -85,7 +85,18 @@ const DEFAULT_SKILLS =
 
 function detectProfiles(resume: ResumeData): RoleProfile[] {
   const haystack = `${experienceText(resume)} ${resume.summary} ${resume.targetRole}`;
-  return PROFILES.filter((profile) => profile.pattern.test(haystack));
+  const byPattern = PROFILES.filter((profile) => profile.pattern.test(haystack));
+  // Se o usuário já escolheu um cargo (digitou ou tocou numa sugestão),
+  // garante que a área daquele cargo entre no cálculo mesmo que o texto
+  // livre não contenha a palavra-chave do padrão.
+  const chosen = resume.targetRole.trim().toLowerCase();
+  if (!chosen) return byPattern;
+  const byChosenRole = PROFILES.filter((profile) =>
+    profile.roles.some((role) => role.toLowerCase() === chosen),
+  );
+  if (byChosenRole.length === 0) return byPattern;
+  const seen = new Set(byPattern.map((profile) => profile.area));
+  return [...byPattern, ...byChosenRole.filter((profile) => !seen.has(profile.area))];
 }
 
 function firstExperienceLine(resume: ResumeData): string {
@@ -99,13 +110,18 @@ function hasNoFormalExperience(resume: ResumeData): boolean {
   return resume.experiences.length === 0;
 }
 
-function roleFor(resume: ResumeData): string {
+function chosenRole(resume: ResumeData): string {
+  // Prioridade total para o que a pessoa escreveu/escolheu em "cargo objetivo".
+  // Só usa o palpite do perfil quando ela ainda não respondeu essa etapa
+  // (ex.: rascunho importado) — antes o palpite sobrescrevia a escolha.
+  const typed = resume.targetRole.trim();
+  if (typed) return typed;
   const profiles = detectProfiles(resume);
-  return profiles.length > 0 ? profiles[0].roles[0] : resume.targetRole || 'profissional';
+  return profiles.length > 0 ? profiles[0].roles[0] : 'profissional';
 }
 
 function buildSummarySuggestions(resume: ResumeData): string[] {
-  const role = roleFor(resume).toLowerCase();
+  const role = chosenRole(resume);
   const highlight = firstExperienceLine(resume);
 
   if (hasNoFormalExperience(resume)) {
@@ -116,9 +132,24 @@ function buildSummarySuggestions(resume: ResumeData): string[] {
     ];
   }
 
+  const first = resume.experiences[0];
+  const prevRole = first.role.trim();
+  const company = first.company.trim();
+  const achievement = first.achievement.trim();
+  const extraCount = resume.experiences.length - 1;
+
+  // Evita repetir "como X ... como X" quando o cargo anterior é igual ao objetivo.
+  const sameRole = prevRole !== '' && prevRole.toLowerCase() === role.toLowerCase();
+  const trajectory = sameRole
+    ? `Com experiência${company ? ` na ${company}` : ''}`
+    : `Com experiência como ${prevRole || role}${company ? ` na ${company}` : ''}`;
+  const trajectoryPlus =
+    extraCount > 0 ? `${trajectory} e em mais ${extraCount} experiência${extraCount > 1 ? 's' : ''}` : trajectory;
+  const proof = achievement !== '' ? `"${achievement}"` : `"${highlight}"`;
+
   return [
-    `Profissional experiente, com conquistas mensuráveis como: "${highlight}". Busco atuar como ${role} gerando resultado desde o primeiro dia.`,
-    `Histórico sólido em entregas com impacto — destaque: "${highlight}". Pronto(a) para elevar os números da equipe como ${role}.`,
+    `${trajectoryPlus}, com conquistas mensuráveis como: ${proof}. Busco atuar como ${role} gerando resultado desde o primeiro dia.`,
+    `Histórico sólido em entregas com impacto — destaque: ${proof}. Pronto(a) para elevar os números da equipe como ${role}.`,
     `Carreira construída sobre resultados: ${highlight}. Busco nova oportunidade como ${role} em um ambiente desafiador.`,
   ];
 }
@@ -143,7 +174,9 @@ export function suggestionsFor(stepId: ResumeField, resume: ResumeData): string[
       (template) =>
         areas.has(template.area) || (hasNoFormalExperience(resume) && template.area === 'iniciante'),
     );
-    return [...matchedTemplates.slice(0, 2).map((template) => template.text), ...buildSummarySuggestions(resume)].slice(0, 4);
+    // Personalizadas primeiro: usam cargo escolhido + empresa/conquista reais.
+    // Templates estáticos entram como complemento, não como destaque.
+    return [...buildSummarySuggestions(resume), ...matchedTemplates.slice(0, 2).map((template) => template.text)].slice(0, 4);
   }
 
   return null;

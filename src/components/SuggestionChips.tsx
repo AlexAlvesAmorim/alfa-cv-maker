@@ -10,14 +10,14 @@ interface SuggestionChipsProps {
 
 export function SuggestionChips({ suggestions, extraSuggestions = [], optional, onPick }: SuggestionChipsProps) {
   const [expanded, setExpanded] = useState(false);
-  const extrasVisible = expanded ? extraSuggestions : [];
+  const extrasVisible = (expanded ? extraSuggestions : []).filter((text) => !suggestions.includes(text));
 
   if (suggestions.length === 0 && extraSuggestions.length === 0 && !optional) return null;
 
   return (
     <div className="suggestion-chips">
       {suggestions.map((text) => (
-        <button key={text} type="button" className="chip" onClick={() => onPick(text)}>
+        <button key={`main-${text}`} type="button" className="chip" onClick={() => onPick(text)}>
           {text}
         </button>
       ))}
@@ -37,7 +37,7 @@ export function SuggestionChips({ suggestions, extraSuggestions = [], optional, 
         </button>
       )}
       {extrasVisible.map((text) => (
-        <button key={text} type="button" className="chip" onClick={() => onPick(text)}>
+        <button key={`extra-${text}`} type="button" className="chip" onClick={() => onPick(text)}>
           {text}
         </button>
       ))}

@@ -130,8 +130,12 @@ export default function App() {
   }, [resume, stepIndex]);
 
   function pushMessage(from: Message['from'], text: string) {
-    setMessages((current) => [...current, { id: nextIdRef.current, from, text }]);
+    // ID capturado ANTES do setState: o updater precisa ser puro
+    // (StrictMode invoca updaters 2x e o processamento pode ser lazy —
+    // ler o ref dentro do updater gerava ids duplicados e sumia bolhas).
+    const id = nextIdRef.current;
     nextIdRef.current += 1;
+    setMessages((current) => [...current, { id, from, text }]);
   }
 
   function botSay(text: string) {

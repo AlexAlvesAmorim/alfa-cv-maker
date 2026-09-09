@@ -18,7 +18,7 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
       )}
       <div className="chat-message__bubble">
         {message.text.split('\n').map((line, index) => (
-          <p key={index}>{line || '\u00A0'}</p>
+          <p key={`${message.id}-${index}`}>{line || '\u00A0'}</p>
         ))}
       </div>
     </div>

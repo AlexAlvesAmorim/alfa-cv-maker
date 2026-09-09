@@ -222,7 +222,7 @@ function Clean() {
       ))}
       <rect x={152} y={14} width={42} height={56} rx={7} fill="#d9f2f4" stroke="#42C7D0" strokeWidth={1.5} />
       {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
-        <rect key={index} x={16 + index * 13} y={72} width={2.4} height={2.4} fill="#8a8a8a" />
+        <rect key={`dots-top-${index}`} x={16 + index * 13} y={72} width={2.4} height={2.4} fill="#8a8a8a" />
       ))}
       <R x={16} y={84} w={52} h={7} c="#42C7D0" />
       <R x={16} y={96} w={60} h={3.8} c="#777" />
@@ -238,7 +238,7 @@ function Clean() {
         </g>
       ))}
       {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => (
-        <rect key={index} x={16 + index * 13} y={192} width={2.4} height={2.4} fill="#8a8a8a" />
+        <rect key={`dots-bottom-${index}`} x={16 + index * 13} y={192} width={2.4} height={2.4} fill="#8a8a8a" />
       ))}
       <R x={16} y={204} w={44} h={7} c="#42C7D0" />
       {[216, 223, 230].map((y, index) => (
