@@ -1,10 +1,12 @@
 import { jsPDF } from 'jspdf';
 import type { ResumeData } from '../types';
-import { orderedContactParts } from './resumeContent';
+import { orderedContactParts, sanitizeResumeForPdf } from './resumeContent';
 
 const PAGE_BOTTOM = 297;
 
 export function buildCoverLetterPdf(resume: ResumeData): Blob {
+  // Mesma fonte WinAnsi do currículo — sanitiza para não gerar mojibake.
+  const data = sanitizeResumeForPdf(resume);
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const marginX = 17;
   const contentW = 210 - marginX * 2;
@@ -14,13 +16,13 @@ export function buildCoverLetterPdf(resume: ResumeData): Blob {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(34, 20, 22);
-  doc.text(resume.fullName || 'Nome não informado', marginX, y);
+  doc.text(data.fullName || 'Nome não informado', marginX, y);
   y += 5.5;
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(110, 95, 97);
-  for (const part of orderedContactParts(resume.contact)) {
+  for (const part of orderedContactParts(data.contact)) {
     doc.text(part, marginX, y);
     y += 4.4;
   }
@@ -39,14 +41,14 @@ export function buildCoverLetterPdf(resume: ResumeData): Blob {
   doc.text('À equipe de Recrutamento,', marginX, y);
   y += 8;
 
-  const role = resume.targetRole || 'a oportunidade';
-  const intro = `Meu nome é ${resume.fullName || '(seu nome)'} e escrevo para demonstrar meu interesse em ${role}. `;
-  const summaryBody = resume.summary.trim()
-    ? `${resume.summary.trim()} `
+  const role = data.targetRole || 'a oportunidade';
+  const intro = `Meu nome é ${data.fullName || '(seu nome)'} e escrevo para demonstrar meu interesse em ${role}. `;
+  const summaryBody = data.summary.trim()
+    ? `${data.summary.trim()} `
     : '';
   const experienceBody =
-    resume.experiences.length > 0
-      ? `Entre minhas experiências recentes, destaco: ${resume.experiences
+    data.experiences.length > 0
+      ? `Entre minhas experiências recentes, destaco: ${data.experiences
           .slice(0, 2)
           .map((experience) => experience.achievement || experience.role)
           .filter(Boolean)
@@ -73,7 +75,7 @@ export function buildCoverLetterPdf(resume: ResumeData): Blob {
   doc.text('Atenciosamente,', marginX, y);
   y += 10;
   doc.setFont('helvetica', 'bold');
-  doc.text(resume.fullName || '', marginX, y);
+  doc.text(data.fullName || '', marginX, y);
 
   return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
 }

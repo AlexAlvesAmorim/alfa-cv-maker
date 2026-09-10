@@ -13,6 +13,8 @@ import { TemplatePicker } from './components/TemplatePicker';
 import { AlfaMatch } from './components/AlfaMatch';
 import { ImportResume } from './components/ImportResume';
 import { ResumeDoc } from './components/ResumeDoc';
+import { Modal } from './components/Modal';
+import { PrintPreview } from './components/PrintPreview';
 import type { ProcessedPhoto } from './utils/photo';
 import type { ImportResult } from './utils/resumeImport';
 import { EMPTY_RESUME, FIELD_CONSTRAINTS, SKIP_VALUE, type Message, type ResumeData, type ResumeField } from './types';
@@ -72,6 +74,7 @@ export default function App() {
   const pendingImportRef = useRef<ImportResult | null>(null);
   const [confirmingImport, setConfirmingImport] = useState(false);
   const [livePreviewUrl, setLivePreviewUrl] = useState<string | null>(null);
+  const [liveExpanded, setLiveExpanded] = useState(false);
 
   const finished = stepIndex >= STEPS.length;
 
@@ -495,13 +498,76 @@ export default function App() {
               <p style={{fontSize:'12px', color:'var(--text-muted)', padding:'0 4px'}}>Dica: você pode importar um PDF/DOCX a qualquer momento no painel final para comparar via Alfa Match.</p>
             )}
             {livePreviewUrl && !finished && stepIndex >= 3 && (
-              <div className="live-preview" aria-label="Prévia ao vivo do currículo">
-                <div className="live-preview__header">
-                  <span>Prévia ao vivo</span>
-                  <span className="live-preview__hint">atualiza enquanto você digita</span>
+              <section className="live-preview" aria-label="Prévia ao vivo do currículo">
+                <header className="live-preview__header">
+                  <div className="live-preview__id">
+                    <span className="live-preview__icon" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 1.5h5.5L13 5v9.5H4z" />
+                        <path d="M9.5 1.5V5H13" />
+                        <path d="M6 8h4M6 10.2h4" />
+                      </svg>
+                    </span>
+                    <span className="live-preview__titles">
+                      <span className="live-preview__title">
+                        Prévia ao vivo
+                        <span className="live-badge" aria-label="atualizando ao vivo">
+                          <span className="live-badge__dot" aria-hidden="true" />
+                          AO VIVO
+                        </span>
+                      </span>
+                      <span className="live-preview__hint">O documento vai ganhando forma enquanto você digita</span>
+                    </span>
+                  </div>
+                  <div className="live-preview__tools">
+                    <span className="live-preview__pill">A4 · PDF</span>
+                    <button
+                      type="button"
+                      className="live-preview__expand"
+                      onClick={() => setLiveExpanded(true)}
+                      aria-label="Ampliar prévia do currículo"
+                    >
+                      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" />
+                      </svg>
+                      Ampliar
+                    </button>
+                  </div>
+                </header>
+                <div className="live-preview__stage">
+                  <div className="live-preview__sheet">
+                    <iframe title="Prévia do currículo" src={livePreviewUrl} className="live-preview__frame" loading="lazy" />
+                  </div>
                 </div>
-                <iframe title="Prévia do currículo" src={livePreviewUrl} className="live-preview__frame" loading="lazy" />
-              </div>
+                <footer className="live-preview__footer">
+                  <span>Rascunho automático — sem salvar nada ainda</span>
+                  <span className="live-preview__page">página 1 de 1</span>
+                </footer>
+              </section>
+            )}
+            {liveExpanded && livePreviewUrl && (
+              <Modal
+                size="print"
+                eyebrow="Prévia de impressão · A4 · PDF"
+                title="Seu currículo até aqui"
+                onClose={() => setLiveExpanded(false)}
+                footer={
+                  <>
+                    <p className="modal__note">É assim que o PDF está ficando — continue para refinar.</p>
+                    <div className="modal__actions">
+                      <button type="button" className="btn btn--primary" onClick={() => setLiveExpanded(false)}>
+                        Continuar editando
+                      </button>
+                    </div>
+                  </>
+                }
+              >
+                <PrintPreview
+                  url={livePreviewUrl}
+                  title="Prévia ampliada do currículo"
+                  metaLeft="Rascunho ao vivo · atualiza a cada etapa"
+                />
+              </Modal>
             )}
             {confirmingImport && (
               <div className="import-confirm">

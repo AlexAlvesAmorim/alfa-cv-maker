@@ -11,10 +11,13 @@ const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/;
 const LINKEDIN_RE = /linkedin\.com|github\.com|\blattes\b/i;
 const PHONE_RE = /(\+\d{1,2}\s?)?\(?\d{2}\)?\s?(9\s?\d{4}|[2-5]\d{3})[- ]?\d{4}/;
 const CITY_RE = /[A-ZÁ-Ú][a-zá-ú]+(\sde\s[A-ZÁ-Ú][a-zá-ú]+)*\s*\/\s*[A-Z]{2}\b/;
+const CITY_DASH_RE = /[A-ZÁ-Ú][a-zá-ú]+(?:\s+(?:de|do|da|dos|das)\s+[A-ZÁ-Ú][a-zá-ú]+)*(?:\s+[A-ZÁ-Ú][a-zá-ú]+){0,3},\s*[A-ZÁ-Ú][a-zá-ú]+(?:\s+[A-ZÁ-Ú][a-zá-ú]+)*\s*-\s*[A-Z]{2}\b/;
+const URL_RE = /https?:\/\/|www\./i;
 const YEAR_RANGE_PHONE_TRAP = /(19|20)\d{2}\s*[-–—]\s*(19|20)\d{2}/;
 
 const SECTION_PATTERNS: Array<[keyof ResumeData, RegExp]> = [
   ['summary', /^resumo|^objetivo|^perfil|^about/i],
+  ['summary', /^projetos?(?=\s+em\s+destaque\b|\s*[:\-–—]|\s*$)|^portf[óo]lio/i],
   ['experiences', /^experi[êe]nc|^hist[óo]rico profissional|^emprego|^carreira/i],
   ['education', /^forma[çc][ãa]o|^escolaridade|^educa[çc][ãa]o|^acad[êe]mic|^cursos?/i],
   ['skills', /^habilidades|^compet[êe]ncias|^qualifica[çc][õo]es|^conhecimentos|^skills|^tecnologias/i],
@@ -22,7 +25,7 @@ const SECTION_PATTERNS: Array<[keyof ResumeData, RegExp]> = [
 ];
 
 const PERIOD_RE =
-  /(?:(?:19|20)\d{2}|[01]?\d\/(?:19|20)\d{2})\s*(?:-|–|—|até|a\s)\s*(?:(?:19|20)\d{2}|[01]?\d\/(?:19|20)\d{2}|atualmente?|presente|hoje)|atualmente|(?:desde|de)\s+(?:19|20)\d{2}\b/i;
+  /(?:(?:19|20)\d{2}|[01]?\d\/(?:19|20)\d{2})\s*(?:-|–|—|até|a\s)\s*(?:(?:19|20)\d{2}|[01]?\d\/(?:19|20)\d{2}|atual(?:mente)?|presente|hoje)|(?:desde|de)\s+(?:19|20)\d{2}\b/i;
 
 export async function extractTextFromFile(file: File): Promise<string> {
   if (file.size > MAX_FILE_BYTES) {
@@ -48,21 +51,23 @@ async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
   for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
     const page = await doc.getPage(pageNumber);
     const content = await page.getTextContent();
-    const rows = new Map<number, string[]>();
+    const rows = new Map<number, Array<{ x: number; text: string }>>();
 
     for (const item of content.items) {
       if (!('str' in item)) continue;
       const text = item.str.replace(/\s+/g, ' ').trim();
       if (!text) continue;
       const y = Math.round(item.transform[5]);
+      const cell = { x: item.transform[4], text };
       const row = rows.get(y);
-      if (row) row.push(text);
-      else rows.set(y, [text]);
+      if (row) row.push(cell);
+      else rows.set(y, [cell]);
     }
 
     const lines = [...rows.entries()]
       .sort((a, b) => b[0] - a[0])
-      .map(([, parts]) => joinLine(parts));
+      // Da esquerda para a direita: tabelas de 2 colunas saem na ordem de leitura
+      .map(([, parts]) => joinLine(parts.sort((left, right) => left.x - right.x).map((part) => part.text)));
     pageLines.push(lines.filter(Boolean));
   }
 
@@ -86,12 +91,17 @@ async function extractDocxText(buffer: ArrayBuffer): Promise<string> {
 }
 
 function isSectionHeader(line: string): keyof ResumeData | null {
-  if (line.length > 40) return null;
+  if (line.length > 70) return null;
   for (const [section, pattern] of SECTION_PATTERNS) {
     const match = line.match(pattern);
     if (!match) continue;
-    const remainder = line.slice(match[0].length).replace(/[^a-zà-ú]/gi, '');
-    return remainder.length <= 24 ? section : null;
+    // "FORMAÇÃO ACADÊMICA, CERTIFICAÇÕES E IDIOMAS" continua sendo cabeçalho,
+    // mas "Objetivo: Analista..." é conteúdo com valor — não é cabeçalho.
+    const remainder = line.slice(match[0].length).trim();
+    if (remainder.length > 40) return null;
+    const afterColon = remainder.match(/:\s*(\S.*)$/);
+    if (afterColon && afterColon[1].split(/\s+/).length >= 2) return null;
+    return section;
   }
   return null;
 }
@@ -100,7 +110,7 @@ function isContactLine(line: string): boolean {
   if (YEAR_RANGE_PHONE_TRAP.test(line)) {
     return EMAIL_RE.test(line) || LINKEDIN_RE.test(line) || CITY_RE.test(line);
   }
-  return EMAIL_RE.test(line) || LINKEDIN_RE.test(line) || PHONE_RE.test(line) || CITY_RE.test(line);
+  return EMAIL_RE.test(line) || LINKEDIN_RE.test(line) || PHONE_RE.test(line) || CITY_RE.test(line) || URL_RE.test(line) || CITY_DASH_RE.test(line);
 }
 
 function looksLikeName(line: string): boolean {
@@ -130,6 +140,18 @@ function parseExperienceLine(raw: string): Experience | null {
     period,
     achievement: parts.slice(2).join('. '),
   };
+}
+
+function isPeriodFragment(line: string): boolean {
+  const clean = line.trim();
+  return /^(?:(?:19|20)\d{2}|[01]?\d\/(?:19|20)\d{2})(?:\s*(?:-|–|—|até|a)\s*(?:(?:19|20)\d{2}|[01]?\d\/(?:19|20)\d{2}|atual(?:mente)?|presente|hoje))?$|^(?:atual(?:mente)?|presente|hoje)$/i.test(clean);
+}
+
+function isContinuationLine(line: string): boolean {
+  const separator = line.search(/\s+[—–]\s+|\s+-\s+|:\s+/);
+  if (separator === -1) return true; // sem separador: fragmento do bloco anterior
+  const after = line.slice(separator).replace(/^\s*[—–:-]\s*/, '');
+  return after.length > 0 && /^[a-zá-ú]/.test(after); // continuação começa minúscula
 }
 
 function inferTargetRole(summary: string): string {
@@ -176,6 +198,11 @@ export function parseResumeText(text: string): ImportResult {
       contactParts.push(line);
       continue;
     }
+    // "Desenvolvedor Front-End | React • TypeScript" logo no topo é o objetivo
+    if (!preludeObjective && line.includes('|') && line.length <= 90 && !/[.!?]$/.test(line)) {
+      preludeObjective = line;
+      continue;
+    }
     summaryPrelude.push(line);
   }
 
@@ -187,10 +214,33 @@ export function parseResumeText(text: string): ImportResult {
     Object.values(buckets).some((bucket) => (bucket?.length ?? 0) > 0);
   const summary = sectionSummary || (hasAnchor ? preludeSummary : '');
 
-  const experiences = (buckets.experiences ?? [])
-    .map(parseExperienceLine)
-    .filter((experience): experience is Experience => experience !== null)
-    .slice(0, 15);
+  const experiences: Experience[] = [];
+  for (const rawLine of buckets.experiences ?? []) {
+    const trimmed = rawLine.trim();
+    if (trimmed.length < 3) continue;
+    const last = experiences[experiences.length - 1];
+    // Linha só com período ("2022", "• Atual"): completa o emprego anterior
+    const periodOnly = trimmed.replace(/^[-•*·]+\s*/, '');
+    if (isPeriodFragment(periodOnly)) {
+      if (last && !last.period) last.period = periodOnly;
+      continue;
+    }
+    // Bullets ("• ...") detalham a conquista do emprego anterior, não são empregos novos
+    if (/^[-•*·]/.test(trimmed) && last) {
+      const detail = trimmed.replace(/^[-•*·]+\s*/, '');
+      if (detail) last.achievement = last.achievement ? `${last.achievement}\n${detail}` : detail;
+      continue;
+    }
+    const parsed = parseExperienceLine(trimmed);
+    if (!parsed) continue;
+    // Sem período e sem cara de "Função - Empresa": subtítulo/itálico do bloco anterior
+    if (!parsed.period && last && isContinuationLine(trimmed)) {
+      last.achievement = last.achievement ? `${last.achievement}\n${trimmed}` : trimmed;
+      continue;
+    }
+    experiences.push(parsed);
+    if (experiences.length >= 15) break;
+  }
 
   const fields: Partial<ResumeData> = {};
 
@@ -202,12 +252,26 @@ export function parseResumeText(text: string): ImportResult {
     if (role) fields.targetRole = role;
   }
   if (experiences.length > 0) fields.experiences = experiences;
-  const educationLines = buckets.education ?? [];
-  const skillLines = buckets.skills ?? [];
+  let educationLines = buckets.education ?? [];
+  const rawSkillLines = buckets.skills ?? [];
   const languageLines = buckets.languages ?? [];
+  // Import de tabela categorizada: rótulos soltos ("Qualidade & DevOps") não são habilidades
+  const skillLines = rawSkillLines.some((line) => line.includes(','))
+    ? rawSkillLines.filter((line) => line.includes(',') || line.split(/\s+/).length > 4 || line.length > 28)
+    : rawSkillLines;
   if (educationLines.length > 0) fields.education = educationLines.join('\n');
   if (skillLines.length > 0) fields.skills = skillLines.join(', ');
   if (languageLines.length > 0) fields.languages = languageLines.join(', ');
+  else if (educationLines.length > 0) {
+    // "FORMAÇÃO, CERTIFICAÇÕES E IDIOMAS" combinada: puxa o idioma de lá
+    const moved = educationLines.filter((line) => /^[-•*·\s]*(ingl[êe]s|espanhol|franc[êe]s|alem[ãa]o|italiano|mandarim|japon[êe]s|idioma)/i.test(line));
+    if (moved.length > 0) {
+      fields.languages = moved.join(', ');
+      educationLines = educationLines.filter((line) => !moved.includes(line));
+      if (educationLines.length > 0) fields.education = educationLines.join('\n');
+      else delete fields.education;
+    }
+  }
 
   const recognized: string[] = [];
   if (fields.fullName) recognized.push('nome');
