@@ -170,7 +170,7 @@
   max-width: 68ch;
 }
 
-.chat-message__bubble p + p {
+.chat-message__bubble p+p {
   margin-top: 7px;
 }
 
@@ -213,12 +213,14 @@
 }
 
 @keyframes typing-dots {
+
   0%,
   60%,
   100% {
     transform: translateY(0);
     opacity: 0.35;
   }
+
   30% {
     transform: translateY(-4px);
     opacity: 0.9;
@@ -340,6 +342,33 @@
   font-size: 12px;
   line-height: 1.45;
   color: var(--warning);
+}
+
+.import-debug {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.import-debug>summary {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.import-debug__text {
+  margin-top: 6px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-main);
+  background: var(--bg-800);
+  border: 1px solid var(--border-red);
+  border-radius: var(--radius-sm);
 }
 
 .alfa-match__imported {
@@ -1033,7 +1062,7 @@
   background: var(--surface-2);
 }
 
-.summary-card__ats-toggle > summary {
+.summary-card__ats-toggle>summary {
   padding: 12px 14px;
   font-size: 13px;
   font-weight: 600;
@@ -1043,15 +1072,15 @@
   transition: background 0.15s;
 }
 
-.summary-card__ats-toggle > summary::-webkit-details-marker {
+.summary-card__ats-toggle>summary::-webkit-details-marker {
   display: none;
 }
 
-.summary-card__ats-toggle > summary:hover {
+.summary-card__ats-toggle>summary:hover {
   background: var(--surface-2);
 }
 
-.summary-card__ats-toggle[open] > summary {
+.summary-card__ats-toggle[open]>summary {
   border-bottom: 1px solid var(--border-red);
   background: var(--surface-2);
 }
@@ -1399,6 +1428,45 @@
   color: var(--text-muted);
 }
 
+.ats-verdict__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ats-score-bar {
+  margin-top: 10px;
+  height: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-red);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ats-score-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.ats-score-bar__fill--high {
+  background: var(--success);
+}
+
+.ats-score-bar__fill--mid {
+  background: var(--warning);
+}
+
+.ats-score-bar__fill--low {
+  background: var(--error);
+}
+
+.ats-improve-title {
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .ats-strong {
   margin-top: 12px;
   font-size: 12px;
@@ -1451,6 +1519,12 @@
   color: var(--error);
   background: transparent;
   border: 1px dashed var(--border-strong);
+}
+
+.ats-keyword--info {
+  color: var(--warning);
+  background: var(--warning-soft);
+  border: 1px solid var(--border-strong);
 }
 
 /* ---------- Alfa Match ---------- */
@@ -1708,6 +1782,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -1834,15 +1909,41 @@ a.skip-link:not(:focus):not(:focus-visible) {
   animation: doc-grow 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-.doc-sheet__line:nth-child(2) { animation-delay: 0.05s; }
-.doc-sheet__line:nth-child(3) { animation-delay: 0.1s; }
-.doc-sheet__line:nth-child(4) { animation-delay: 0.15s; }
-.doc-sheet__line:nth-child(5) { animation-delay: 0.2s; }
-.doc-sheet__line:nth-child(6) { animation-delay: 0.25s; }
-.doc-sheet__line:nth-child(7) { animation-delay: 0.3s; }
-.doc-sheet__line:nth-child(8) { animation-delay: 0.35s; }
-.doc-sheet__line:nth-child(9) { animation-delay: 0.4s; }
-.doc-sheet__line:nth-child(10) { animation-delay: 0.45s; }
+.doc-sheet__line:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.doc-sheet__line:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.doc-sheet__line:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.doc-sheet__line:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+.doc-sheet__line:nth-child(6) {
+  animation-delay: 0.25s;
+}
+
+.doc-sheet__line:nth-child(7) {
+  animation-delay: 0.3s;
+}
+
+.doc-sheet__line:nth-child(8) {
+  animation-delay: 0.35s;
+}
+
+.doc-sheet__line:nth-child(9) {
+  animation-delay: 0.4s;
+}
+
+.doc-sheet__line:nth-child(10) {
+  animation-delay: 0.45s;
+}
 
 @keyframes doc-grow {
   from {
@@ -1850,6 +1951,7 @@ a.skip-link:not(:focus):not(:focus-visible) {
     transform-origin: left center;
     opacity: 0;
   }
+
   to {
     transform: scaleX(1);
     opacity: 1;
@@ -2009,6 +2111,7 @@ a.skip-link:not(:focus):not(:focus-visible) {
   0% {
     box-shadow: 0 0 0 2px var(--success), 0 0 44px rgba(52, 209, 124, 0.4);
   }
+
   100% {
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(52, 209, 124, 0.25) inset;
   }

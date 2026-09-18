@@ -124,7 +124,17 @@ export default function App() {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify({ resume, stepIndex } satisfies Draft));
       } catch {
-        // modo privado ou cota cheia — o app segue funcionando sem rascunho
+        try {
+          // Foto em base64 estoura a cota do localStorage (~5MB).
+          // Tenta de novo sem a foto: o texto continua salvo, a foto fica só na sessão.
+          const { photo: _photo, photoCircle: _photoCircle, ...resumeWithoutPhoto } = resume;
+          localStorage.setItem(
+            DRAFT_KEY,
+            JSON.stringify({ resume: { ...resumeWithoutPhoto, photo: '', photoCircle: '' }, stepIndex } satisfies Draft),
+          );
+        } catch {
+          // modo privado ou cota cheia — o app segue funcionando sem rascunho
+        }
       }
     }, 400);
   }, [resume, stepIndex]);

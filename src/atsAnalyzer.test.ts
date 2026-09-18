@@ -48,4 +48,61 @@ describe('analyzeForJob', () => {
     expect(result.score).toBe(0);
     expect(result.totalKeywords).toBe(0);
   });
+
+  it('ignora palavras comuns, beneficios e dados da empresa', () => {
+    const description = [
+      'Somos a maior fabricante de equipamentos do Brasil, com matriz em São Paulo.',
+      'Requisitos: SQL, Delphi e Sapiens ERP.',
+      'Diferenciais: Python e plano de saúde Bradesco.',
+      'Benefícios: vale refeição, cesta básica, gympass, seguro de vida e bolsa educação.',
+      'Será você que vai manter tudo tranquilo em família.',
+    ].join('\n');
+    const result = analyzeForJob(resume, description);
+    const allMissing = [
+      ...result.required.missing,
+      ...result.differentials.missing,
+      ...result.general.missing,
+      ...result.stacks.missing,
+    ];
+    for (const noise of ['sera', 'voce', 'mes', 'refeicao', 'gympass', 'somos', 'matriz', 'familia', 'tranquila', 'manter']) {
+      expect(allMissing).not.toContain(noise);
+    }
+    expect(result.stacks.missing).toContain('sql');
+    expect(result.stacks.missing).toContain('delphi');
+    expect(result.totalKeywords).toBeLessThan(30);
+  });
+
+  it('extrai senioridade: anos de experiencia, ingles e nivel', () => {
+    const result = analyzeForJob(
+      resume,
+      'Vaga para desenvolvedor pleno com 3 anos de experiência. Requisitos: inglês avançado, SQL.',
+    );
+    expect(result.seniority).toContain('3 anos de experiência');
+    expect(result.seniority).toContain('Inglês avançado');
+    expect(result.seniority).toContain('Nível pleno');
+  });
+
+  it('filtra jargao de anuncio: conjugacoes, adjetivos e web generica', () => {
+    const description = [
+      'Requisitos: buscamos familiaridade com Karma e Protractor, proficiência e habilidades.',
+      'Diferenciais: pós-graduação, ambiente que apoiam, assistência médica e classe mundial.',
+      'Web dinâmicas e web utilizando Angular.',
+    ].join('\n');
+    const result = analyzeForJob(resume, description);
+    const allMissing = [
+      ...result.required.missing,
+      ...result.differentials.missing,
+      ...result.general.missing,
+      ...result.stacks.missing,
+    ];
+    for (const noise of [
+      'buscamos', 'familiaridade', 'habilidades', 'proficiencia', 'futuro', 'ambiente',
+      'apoiam', 'classe mundial', 'consecutivo', 'web dinâmicas', 'web utilizando', 'web',
+    ]) {
+      expect(allMissing).not.toContain(noise);
+    }
+    expect(result.stacks.missing).toContain('karma');
+    expect(result.stacks.missing).toContain('protractor');
+    expect(result.stacks.missing).toContain('angular');
+  });
 });

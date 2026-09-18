@@ -28,6 +28,7 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugText, setDebugText] = useState<string | null>(null);
   const copy = LABELS[variant];
 
   async function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -36,8 +37,10 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
     if (!file || busy) return;
     setBusy(true);
     setError(null);
+    setDebugText(null);
     try {
       const text = await extractTextFromFile(file);
+      setDebugText(text.slice(0, 1500));
       const result = parseResumeText(text);
       if (result.recognized.length === 0) {
         setError('Não consegui reconhecer seções nesse arquivo — tente outro PDF/DOCX ou preencha pelo assistente.');
@@ -45,7 +48,12 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
       }
       onImported(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível ler o arquivo.');
+      const raw = err instanceof Error ? err.message : 'Não foi possível ler o arquivo.';
+      // Nunca vazar erro técnico (ex.: "Invalid workerSrc") para o usuário final.
+      const friendly = /workerSrc|worker|pdf\.worker|triggering event/i.test(raw)
+        ? 'Não consegui abrir esse PDF agora — tente um DOCX ou TXT, ou atualize a página e tente de novo.'
+        : raw;
+      setError(friendly);
     } finally {
       setBusy(false);
     }
@@ -58,9 +66,9 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
         type="file"
         accept=".pdf,.docx,.txt,application/pdf,text/plain"
         className="import-resume__input"
-        onChange={handleChange}
+        onChange={(event) => void handleChange(event)}
         disabled={busy}
-        aria-hidden="true"
+        hidden
         tabIndex={-1}
       />
       <button
@@ -73,9 +81,15 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
       </button>
       {!busy && <span className="import-resume__hint">{copy.hint}</span>}
       {error && (
-        <p className="import-resume__error" role="status">
+        <p className="import-resume__error" role="alert">
           {error}
         </p>
+      )}
+      {debugText !== null && (
+        <details className="import-debug">
+          <summary>Ver o texto lido do arquivo (diagnóstico)</summary>
+          <pre className="import-debug__text">{debugText}</pre>
+        </details>
       )}
     </div>
   );
