@@ -84,17 +84,29 @@ npm install
 npm run dev      # http://localhost:5175
 npm run build    # tsc -b + vite build → dist/
 npm run preview  # serve o build de produção
-npm test         # vitest run (6 suítes)
+npm test         # vitest run (7 suítes)
 npm run lint     # oxlint
 ```
 
 Requisitos: Node 20+. Nenhuma variável de ambiente, nenhum backend.
 
+## 🌐 Como publicar
+
+O build gera só arquivo estático, então dá pra hospedar de graça:
+
+```bash
+npm run build    # gera a pasta dist/
+```
+
+Depois é só publicar a pasta `dist/` no Netlify (arrasta a pasta no painel),
+na Vercel (`vercel --prod`) ou no GitHub Pages. O `base` já está como `'./'`
+então funciona em qualquer um sem mudar nada.
+
 ---
 
 ## 🧪 Testes e CI
 
-- `npm test` — 6 arquivos (`App`, `atsAnalyzer`, `dynamicSuggestions`, `jobUrl`, `resumeContent`, `resumeImport`)
+- `npm test` — 7 arquivos (`App`, `atsAnalyzer`, `dynamicSuggestions`, `jobUrl`, `resumeContent`, `resumeImport`, `resumeExport`)
 - CI (`.github/workflows/ci.yml`): `npm ci` → `lint` → `test` → `build` em push/PR para `master`
 
 ---
@@ -105,7 +117,7 @@ Requisitos: Node 20+. Nenhuma variável de ambiente, nenhum backend.
 - [x] Fechar gaps WCAG 2.1 AA do critique (foco ao remover experiência, badge acessível, input multilinha)
 - [x] SEO base + PWA (manifest, robots, twitter/og) e `LICENSE` MIT
 - [x] UX do custo da foto IA (aviso de ~40MB, limite 10MB, offline, cancelar)
-- [ ] Cobertura de testes dos exports PDF/DOCX
+- [x] Cobertura básica dos exports PDF/DOCX (um teste pra cada modelo)
 - [ ] Deploy demo estático + link na About do repo (+ `og:url`/canonical finais)
 
 ---
