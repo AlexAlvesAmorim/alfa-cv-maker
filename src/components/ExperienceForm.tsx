@@ -12,6 +12,7 @@ const EMPTY_FIELD: Experience = { role: '', company: '', period: '', achievement
 export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProps) {
   const [list, setList] = useState<Experience[]>(initial);
   const [draft, setDraft] = useState<Experience>(EMPTY_FIELD);
+  const [announcement, setAnnouncement] = useState('');
   const firstInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -53,9 +54,16 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
   }
 
   function removeExperience(index: number) {
+    const removed = list[index];
     setList((current) => current.filter((_, i) => i !== index));
+    setAnnouncement(
+      removed?.role ? `Experiência ${removed.role} removida.` : 'Experiência removida.',
+    );
     requestAnimationFrame(() => {
-      listRef.current?.focus();
+      // Lista vazia: volta ao primeiro campo; senão, mantém o foco na lista
+      // para o leitor de tela anunciar o novo total via aria-live.
+      if (list.length <= 1) firstInputRef.current?.focus();
+      else listRef.current?.focus();
     });
   }
 
@@ -153,6 +161,7 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
           ))}
         </ul>
       )}
+      <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     </div>
   );
 }

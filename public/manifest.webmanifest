@@ -1,0 +1,18 @@
+{
+  "name": "Alfa Curriculum Maker",
+  "short_name": "Alfa CV",
+  "description": "Monte seu currículo conversando com o assistente. Grátis, sem cadastro, 100% no navegador. Exporte em PDF e DOCX.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0407",
+  "theme_color": "#0e0407",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

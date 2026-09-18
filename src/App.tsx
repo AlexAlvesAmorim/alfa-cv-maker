@@ -13,150 +13,32 @@ import { TemplatePicker } from './components/TemplatePicker';
 import { AlfaMatch } from './components/AlfaMatch';
 import { ImportResume } from './components/ImportResume';
 import { ResumeDoc } from './components/ResumeDoc';
+import { useDraft } from './hooks/useDraft';
+import { useLivePreview } from './hooks/useLivePreview';
+import { BOT_DELAY_MS, useChatBot } from './hooks/useChatBot';
 import type { ProcessedPhoto } from './utils/photo';
 import type { ImportResult } from './utils/resumeImport';
-import { EMPTY_RESUME, FIELD_CONSTRAINTS, SKIP_VALUE, type Message, type ResumeData, type ResumeField } from './types';
+import { FIELD_CONSTRAINTS, SKIP_VALUE, type ResumeField } from './types';
 import { FINISH_MESSAGE, STEPS, WELCOME_MESSAGE, phaseForStep } from './data/steps';
 import { extraSuggestionsFor, recommendedTemplateId, suggestionsFor } from './data/dynamicSuggestions';
 import { findTemplateByInput } from './data/templates';
 import { cleanFullName } from './utils/resumeContent';
 
-const BOT_DELAY_MS = 900;
-const DRAFT_KEY = 'alfa-cv-draft-v3';
-
-interface Draft {
-  resume: ResumeData;
-  stepIndex: number;
-}
-
-function loadDraft(): Draft | null {
-  try {
-    // Migração v2 -> v3: layout movido de índice 3 para 5; tenta corrigir drafts antigos
-    const raw = localStorage.getItem(DRAFT_KEY) ?? localStorage.getItem('alfa-cv-draft-v2');
-    if (!raw) return null;
-    const draft = JSON.parse(raw) as Draft & { version?: number };
-    if (!draft.resume || typeof draft.stepIndex !== 'number') return null;
-    if (draft.stepIndex < 0 || draft.stepIndex > STEPS.length) return null;
-    // Draft antigo com stepIndex 3 era 'layout' -> agora é 5; se ainda não preencheu targetRole/summary, recua
-    if (localStorage.getItem(DRAFT_KEY) === null && draft.stepIndex >= 3) {
-      const hasTarget = Boolean(draft.resume.targetRole);
-      const hasSummary = Boolean(draft.resume.summary);
-      if (!hasTarget || !hasSummary) draft.stepIndex = Math.min(draft.stepIndex, 3);
-    }
-    return draft;
-  } catch {
-    return null;
-  }
-}
-
 export default function App() {
-  const draftRef = useRef<Draft | null>(null);
-  if (draftRef.current === null) {
-    draftRef.current = loadDraft();
-  }
-  const draft = draftRef.current;
-
-  const [messages, setMessages] = useState<Message[]>(() => [{ id: 0, from: 'bot', text: WELCOME_MESSAGE }]);
-  const [stepIndex, setStepIndex] = useState(() => draft?.stepIndex ?? 0);
-  const [resume, setResume] = useState<ResumeData>(() => draft?.resume ?? EMPTY_RESUME);
-  const [isTyping, setIsTyping] = useState(false);
+  const { resume, setResume, stepIndex, setStepIndex, clearDraft, initialDraft: draft } = useDraft();
+  const { messages, isTyping, setIsTyping, pushMessage, botSay, flushBot, resetChat, timerRef } =
+    useChatBot(WELCOME_MESSAGE);
   const [draftText, setDraftText] = useState('');
   const [mode, setMode] = useState<'chat' | 'match'>('chat');
   const [returnToSummary, setReturnToSummary] = useState(false);
 
-  const nextIdRef = useRef(1);
-  const timerRef = useRef<number | null>(null);
-  const draftTimerRef = useRef<number | null>(null);
   const chatLogRef = useRef<HTMLDivElement | null>(null);
   const didStartRef = useRef(false);
   const pendingImportRef = useRef<ImportResult | null>(null);
   const [confirmingImport, setConfirmingImport] = useState(false);
-  const [livePreviewUrl, setLivePreviewUrl] = useState<string | null>(null);
 
   const finished = stepIndex >= STEPS.length;
-
-  // Preview ao vivo após passo 4 (quando já tem nome+objetivo+resumo) — sticky
-  useEffect(() => {
-    const hasContent = resume.fullName.trim() !== '' || resume.targetRole.trim() !== '' || resume.summary.trim() !== '';
-    const shouldPreview = !finished && stepIndex >= 3 && hasContent;
-    if (!shouldPreview) {
-      if (livePreviewUrl) {
-        URL.revokeObjectURL(livePreviewUrl);
-        setLivePreviewUrl(null);
-      }
-      return;
-    }
-    let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      try {
-        const { buildResumePdf } = await import('./utils/pdfExport');
-        const blob = buildResumePdf(resume);
-        const url = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setLivePreviewUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return url;
-        });
-      } catch {
-        // preview é secundário — falha silenciosa
-      }
-    }, 600);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resume, stepIndex, finished]);
-
-  useEffect(() => {
-    return () => {
-      if (livePreviewUrl) URL.revokeObjectURL(livePreviewUrl);
-    };
-  }, [livePreviewUrl]);
-
-  useEffect(() => {
-    if (draftTimerRef.current !== null) window.clearTimeout(draftTimerRef.current);
-    if (resume === EMPTY_RESUME && stepIndex === 0) return;
-    draftTimerRef.current = window.setTimeout(() => {
-      try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify({ resume, stepIndex } satisfies Draft));
-      } catch {
-        try {
-          // Foto em base64 estoura a cota do localStorage (~5MB).
-          // Tenta de novo sem a foto: o texto continua salvo, a foto fica só na sessão.
-          const { photo: _photo, photoCircle: _photoCircle, ...resumeWithoutPhoto } = resume;
-          localStorage.setItem(
-            DRAFT_KEY,
-            JSON.stringify({ resume: { ...resumeWithoutPhoto, photo: '', photoCircle: '' }, stepIndex } satisfies Draft),
-          );
-        } catch {
-          // modo privado ou cota cheia — o app segue funcionando sem rascunho
-        }
-      }
-    }, 400);
-  }, [resume, stepIndex]);
-
-  function pushMessage(from: Message['from'], text: string) {
-    // ID capturado ANTES do setState: o updater precisa ser puro
-    // (StrictMode invoca updaters 2x e o processamento pode ser lazy —
-    // ler o ref dentro do updater gerava ids duplicados e sumia bolhas).
-    const id = nextIdRef.current;
-    nextIdRef.current += 1;
-    setMessages((current) => [...current, { id, from, text }]);
-  }
-
-  function botSay(text: string) {
-    setIsTyping(true);
-    // Respostas longas "digitam" por mais tempo, com teto para não travar o fluxo.
-    const delay = Math.min(BOT_DELAY_MS + text.length * 4, 1600);
-    timerRef.current = window.setTimeout(() => {
-      setIsTyping(false);
-      pushMessage('bot', text);
-    }, delay);
-  }
+  const livePreviewUrl = useLivePreview(resume, stepIndex, finished);
 
   useEffect(() => {
     if (didStartRef.current) return;
@@ -204,14 +86,6 @@ export default function App() {
       };
     }
     return { main: currentStep.suggestions, extra: [] };
-  }
-
-  function flushBot() {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    setIsTyping(false);
   }
 
   function advanceStep() {
@@ -356,20 +230,12 @@ export default function App() {
 
   function handleRestart() {
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    try {
-      localStorage.removeItem(DRAFT_KEY);
-    } catch {
-      // sem acesso ao storage — segue sem limpar
-    }
-    draftRef.current = null;
-    setMessages([]);
-    nextIdRef.current = 1;
-    setStepIndex(0);
-    setResume(EMPTY_RESUME);
-    setIsTyping(false);
+    clearDraft();
+    pendingImportRef.current = null;
+    setConfirmingImport(false);
     setDraftText('');
     setReturnToSummary(false);
-    pushMessage('bot', WELCOME_MESSAGE);
+    resetChat(WELCOME_MESSAGE);
     timerRef.current = window.setTimeout(() => pushMessage('bot', STEPS[0].question), BOT_DELAY_MS);
   }
 

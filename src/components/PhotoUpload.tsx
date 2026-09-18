@@ -12,12 +12,15 @@ const VERY_SLOW_HINT_SECONDS = 45;
 
 function statusText(status: Status, elapsed: number): { main: string; hint: string | null } {
   if (status === 'idle') {
-    return { main: 'JPG ou PNG. A remoção de fundo acontece no seu navegador.', hint: null };
+    return {
+      main: 'JPG ou PNG até 10MB. A remoção de fundo acontece no seu navegador.',
+      hint: 'Primeiro uso baixa o modelo de IA (~40MB) e pode demorar no 4G — sem internet não funciona, mas dá para pular e adicionar depois.',
+    };
   }
   if (status === 'error') {
     return {
-      main: 'Não consegui processar essa imagem. Escolha outra foto ou pule esta etapa.',
-      hint: null,
+      main: 'Não consegui processar essa imagem (arquivo inválido, maior que 10MB ou sem internet para baixar o modelo).',
+      hint: 'Escolha outra foto ou pule esta etapa — dá para adicionar depois.',
     };
   }
   if (elapsed >= VERY_SLOW_HINT_SECONDS) {
@@ -45,7 +48,6 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
   useEffect(() => {
     if (status !== 'working') return;
     const startedAt = Date.now();
-    setElapsed(0);
     const timer = window.setInterval(() => {
       setElapsed(Math.floor((Date.now() - startedAt) / 1000));
     }, 1000);
@@ -69,7 +71,18 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      setStatus('error');
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && navigator.onLine === false) {
+      setStatus('error');
+      return;
+    }
+
     const run = ++runRef.current;
+    setElapsed(0);
     setStatus('working');
     try {
       const { processPhotoFile } = await import('../utils/photo');

@@ -57,6 +57,7 @@ export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onC
         disabled={disabled}
         aria-label="Sua resposta"
         aria-multiline="true"
+        aria-describedby="chat-input-hint"
         title="Enter envia · Shift+Enter adiciona nova linha"
         onChange={(event) => {
           onChange(event.target.value);
@@ -90,6 +91,9 @@ export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onC
           <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
         </svg>
       </button>
+      <span id="chat-input-hint" className="sr-only">
+        Enter envia a resposta. Shift mais Enter adiciona uma nova linha.
+      </span>
     </form>
   );
 }

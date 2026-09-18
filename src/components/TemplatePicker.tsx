@@ -72,12 +72,12 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
               className={`template-card ${isSelected ? 'template-card--selected' : ''} ${isRecommended ? 'template-card--recommended' : ''} ${!isAts ? 'template-card--visual' : ''}`}
               title={template.atsNote ?? undefined}
             >
-              <span className={`template-card__kind ${isAts ? 'template-card__kind--ats' : 'template-card__kind--visual'}`}>
+              <span aria-hidden="true" className={`template-card__kind ${isAts ? 'template-card__kind--ats' : 'template-card__kind--visual'}`}>
                 {isAts ? 'ATS ✓' : 'Visual'}
               </span>
-              {isSelected && <span className="template-card__badge">Escolhido</span>}
+              {isSelected && <span aria-hidden="true" className="template-card__badge">Escolhido</span>}
               {!isSelected && isRecommended && (
-                <span className="template-card__badge template-card__badge--recommended">
+                <span aria-hidden="true" className="template-card__badge template-card__badge--recommended">
                   ★ Recomendado
                 </span>
               )}
@@ -86,7 +86,7 @@ export function TemplatePicker({ selected, disabled, recommended, onPick }: Temp
                 aria-pressed={isSelected}
                 disabled={disabled}
                 className="template-card__select"
-                aria-label={`Modelo ${template.label}${isRecommended ? ' — recomendado para o seu perfil' : ''}${isSelected ? ' — escolhido' : ''}`}
+                aria-label={`Modelo ${template.label}${isRecommended ? ' — recomendado para o seu perfil' : ''}${isSelected ? ' — escolhido' : ''} — ${isAts ? 'passa em robôs de triagem ATS' : 'visual, pode falhar no robô de triagem'}`}
                 onClick={() => setPending(template.value)}
               >
                 <span className="template-card__thumb" aria-hidden="true">

@@ -101,10 +101,12 @@ Requisitos: Node 20+. Nenhuma variável de ambiente, nenhum backend.
 
 ## 🗺️ Roadmap
 
-- [ ] Quebrar `App.tsx` em hooks (`useChat`, `useDraft`, `useLivePreview`)
-- [ ] Fechar gaps WCAG 2.1 AA do critique (foco ao remover experiência, badge acessível, input multilinha)
+- [x] Quebrar `App.tsx` em hooks (`useChatBot`, `useDraft`, `useLivePreview`)
+- [x] Fechar gaps WCAG 2.1 AA do critique (foco ao remover experiência, badge acessível, input multilinha)
+- [x] SEO base + PWA (manifest, robots, twitter/og) e `LICENSE` MIT
+- [x] UX do custo da foto IA (aviso de ~40MB, limite 10MB, offline, cancelar)
 - [ ] Cobertura de testes dos exports PDF/DOCX
-- [ ] Deploy demo estático + link na About do repo
+- [ ] Deploy demo estático + link na About do repo (+ `og:url`/canonical finais)
 
 ---
 
