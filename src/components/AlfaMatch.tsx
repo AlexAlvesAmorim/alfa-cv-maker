@@ -5,6 +5,7 @@ import { experienceText } from '../utils/resumeContent';
 import type { ImportResult } from '../utils/resumeImport';
 import { extractFirstUrl, resolveJobDescription } from '../utils/jobUrl';
 import { AtsReport } from './AtsReport';
+import { AnalysisModal } from './AnalysisModal';
 import { ImportResume } from './ImportResume';
 
 interface AlfaMatchProps {
@@ -45,6 +46,14 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
   const [importedName, setImportedName] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  // null = modal fechado, 0..3 = fase da animacao
+  const [modalStep, setModalStep] = useState<number | null>(null);
+  const timersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, []);
 
   const onResumeUpdateRef = useRef(onResumeUpdate);
   useEffect(() => {
@@ -97,7 +106,10 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
   }
 
   async function handleAnalyze() {
+    if (modalStep !== null) return;
     setFetchError(null);
+    setResult(null);
+    setModalStep(0);
     let description = jobDescription;
     const url = extractFirstUrl(description);
     if (url && description.trim().length < 400) {
@@ -107,6 +119,7 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
         if (description.trim().length < 20) throw new Error('thin');
         setJobDescription(description);
       } catch {
+        closeModal();
         setFetchError(
           'Não conseguimos ler o anúncio por esse link — alguns sites bloqueiam a leitura automática. '
             + 'Copie o texto da descrição e cole aqui.',
@@ -125,10 +138,30 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
       languages: fields.languages,
       experiences: parseExperienceLines(fields.experiences),
     };
-    setResult(analyzeForJob(draftResume, description));
+    const found = analyzeForJob(draftResume, description);
+    // a analise em si é rapida, as fases sao pra dar feedback visual
+    timersRef.current.push(window.setTimeout(() => setModalStep(1), 700));
+    timersRef.current.push(window.setTimeout(() => setModalStep(2), 1500));
+    timersRef.current.push(
+      window.setTimeout(() => {
+        setResult(found);
+        setModalStep(3);
+      }, 2200),
+    );
   }
 
-  const canAnalyze = jobDescription.trim().length >= 20 && !fetching;
+  function closeModal() {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current = [];
+    setFetching(false);
+    setModalStep(null);
+  }
+
+  function seeResult() {
+    if (result) setModalStep(3);
+  }
+
+  const canAnalyze = jobDescription.trim().length >= 20 && !fetching && modalStep === null;
 
   return (
     <div className="alfa-match">
@@ -170,6 +203,11 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
           >
             {fetching ? 'Buscando a vaga...' : 'Analisar compatibilidade'}
           </button>
+          {result && modalStep === null && (
+            <button type="button" className="btn btn--outline" onClick={seeResult}>
+              Ver resultado ({result.score}%)
+            </button>
+          )}
         </section>
 
         <section className="alfa-match__panel">
@@ -208,14 +246,17 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
         </section>
       </div>
 
-      <div aria-live="polite">
-        {result && (
-          <section className="alfa-match__report">
-            <h2 className="alfa-match__panel-title">3. Resultado do encaixe</h2>
-            <AtsReport result={result} />
-          </section>
-        )}
-      </div>
+      {modalStep !== null && (
+        <AnalysisModal
+          step={modalStep}
+          score={result?.score ?? null}
+          tone={result?.verdict.tone ?? 'mid'}
+          label={result?.verdict.label ?? ''}
+          report={result ? <AtsReport result={result} /> : undefined}
+          onCancel={closeModal}
+          onClose={() => setModalStep(null)}
+        />
+      )}
     </div>
   );
 }

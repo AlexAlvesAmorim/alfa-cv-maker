@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseResumeText } from './utils/resumeImport';
+import { breakRowOnGap, parseResumeText } from './utils/resumeImport';
 
 const SAMPLE = `Maria Oliveira Santos
 (11) 98888-7777 | maria@email.com | São Paulo/SP | linkedin.com/in/maria
@@ -133,5 +133,38 @@ describe('importação de currículo', () => {
       'Maria Oliveira Santos\nPerfil Profissional\nProfissional com foco em resultado e metas claras.',
     );
     expect(fields.summary).toContain('foco em resultado');
+  });
+
+  it('cabecalho com enfeite ainda vira secao', () => {
+    const { fields } = parseResumeText(
+      'João Pedro Almeida\n— Experiência Profissional —\nAuxiliar — Loja X (2022-2023): bati a meta\n• Formação Acadêmica •\nEnsino Médio Completo',
+    );
+    expect(fields.experiences?.[0]?.role).toBe('Auxiliar');
+    expect(fields.education).toContain('Ensino Médio');
+  });
+
+  it('frase normal comecando com palavra de secao nao vira secao', () => {
+    const { fields } = parseResumeText(
+      'Maria Oliveira Santos\nResumo\nExperiência em vendas\nHabilidades\nVendas',
+    );
+    expect(fields.summary).toContain('Experiência em vendas');
+    expect(fields.experiences).toBeUndefined();
+    expect(fields.skills).toContain('Vendas');
+  });
+
+  it('nao mistura duas colunas que estao na mesma altura', () => {
+    const lines = breakRowOnGap([
+      { x: 10, width: 50, text: '(11) 99999-8888' },
+      { x: 300, width: 80, text: 'Experiência Profissional' },
+    ]);
+    expect(lines).toEqual(['(11) 99999-8888', 'Experiência Profissional']);
+  });
+
+  it('mantem palavras perto uma da outra na mesma linha', () => {
+    const lines = breakRowOnGap([
+      { x: 10, width: 30, text: 'Maria' },
+      { x: 45, width: 40, text: 'Oliveira' },
+    ]);
+    expect(lines).toEqual(['Maria Oliveira']);
   });
 });

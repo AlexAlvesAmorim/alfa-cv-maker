@@ -62,4 +62,10 @@ describe('experiências estruturadas', () => {
     const titles = buildSections(resume).map((section) => section.title);
     expect(titles).toEqual(['Experiência Profissional', 'Habilidades']);
   });
+
+  it('separa habilidade com bala e pipe que veio de pdf baguncado', () => {
+    const resume: ResumeData = { ...EMPTY_RESUME, skills: '• React • Git | Figma' };
+    const skills = buildSections(resume).find((section) => section.title === 'Habilidades');
+    expect(skills?.items).toEqual(['React', 'Git', 'Figma']);
+  });
 });

@@ -57,7 +57,8 @@ export function rgbToHex(rgb: [number, number, number]): string {
 }
 
 export function getTemplateId(layout: string): TemplateId {
-  const value = layout.toLowerCase();
+  // importacao nao traz modelo, ai cai no padrao em vez de quebrar
+  const value = (layout ?? '').toLowerCase();
   if (value.includes('clássico') || value.includes('classico')) return 'classic';
   // ats-dev deve ser testado antes de 'ats' genérico para não colidir
   if (value.includes('ats-dev') || value.includes('ats dev') || value.includes('dev ats')) return 'ats-dev';
@@ -69,17 +70,21 @@ export function getTemplateId(layout: string): TemplateId {
   return 'canva';
 }
 
+function cleanBullet(text: string): string {
+  return text.replace(/^[-•*·]+\s*/, '').trim();
+}
+
 function splitLines(text: string): string[] {
   return text
     .split(/\r?\n|;\s+/)
-    .map((line) => line.trim())
+    .map((line) => cleanBullet(line))
     .filter(Boolean);
 }
 
 function splitSkills(text: string): string[] {
   return text
-    .split(',')
-    .map((skill) => skill.trim())
+    .split(/[,\n;•·|]+/)
+    .map((skill) => cleanBullet(skill))
     .filter(Boolean);
 }
 

@@ -4,6 +4,7 @@ import { ACCENT_PRESETS, saveBlob } from '../utils/resumeContent';
 import { analyzeForJob, type AtsResult } from '../utils/atsAnalyzer';
 import { extractFirstUrl, resolveJobDescription } from '../utils/jobUrl';
 import { AtsReport } from './AtsReport';
+import { AnalysisModal } from './AnalysisModal';
 import { ImportResume } from './ImportResume';
 import { PdfPreviewModal } from './PdfPreviewModal';
 
@@ -41,7 +42,10 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
   const [comparison, setComparison] = useState<{ maker: number; imported: number | null } | null>(null);
   const [truncatedNotice, setTruncatedNotice] = useState('');
   const [downloadedEver, setDownloadedEver] = useState(false);
+  // null = modal fechado, 0..3 = fase da animacao
+  const [modalStep, setModalStep] = useState<number | null>(null);
   const downloadedTimerRef = useRef<number | null>(null);
+  const timersRef = useRef<number[]>([]);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -49,8 +53,10 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
   }, []);
 
   useEffect(() => {
+    const timers = timersRef.current;
     return () => {
       if (downloadedTimerRef.current !== null) window.clearTimeout(downloadedTimerRef.current);
+      timers.forEach((timer) => window.clearTimeout(timer));
     };
   }, []);
 
@@ -122,9 +128,11 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
     }
   }
 
-  async function performAnalysis(target: 'maker' | 'imported', importedData: ResumeData | null) {
+  async function performAnalysis(target: 'maker' | 'imported', importedData: ResumeData | null, showModal = true) {
+    if (showModal && modalStep !== null) return;
     setFetchError(null);
     setTruncatedNotice('');
+    if (showModal) setModalStep(0);
     let description = jobDescription;
     const url = extractFirstUrl(description);
     if (url && description.trim().length < 400) {
@@ -138,6 +146,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
         }
         setJobDescription(description);
       } catch {
+        if (showModal) closeModal();
         setFetchError(
           'Não conseguimos ler o anúncio por esse link — alguns sites bloqueiam a leitura automática. '
             + 'Cole o texto da descrição no campo acima.',
@@ -151,14 +160,39 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
     const makerResult = analyzeForJob(resume, description);
     const importedResult = importedData ? analyzeForJob(importedData, description) : null;
     const selectedIsImported = target === 'imported' && importedResult !== null;
-    setAtsResult(selectedIsImported ? importedResult : makerResult);
-    setComparison({ maker: makerResult.score, imported: importedResult ? importedResult.score : null });
+    const selected = selectedIsImported ? importedResult : makerResult;
+    if (!showModal) {
+      setAtsResult(selected);
+      setComparison({ maker: makerResult.score, imported: importedResult ? importedResult.score : null });
+      return;
+    }
+    // a analise em si é rapida, as fases sao pra dar feedback visual
+    timersRef.current.push(window.setTimeout(() => setModalStep(1), 700));
+    timersRef.current.push(window.setTimeout(() => setModalStep(2), 1500));
+    timersRef.current.push(
+      window.setTimeout(() => {
+        setAtsResult(selected);
+        setComparison({ maker: makerResult.score, imported: importedResult ? importedResult.score : null });
+        setModalStep(3);
+      }, 2200),
+    );
+  }
+
+  function closeModal() {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current = [];
+    setFetchingJob(false);
+    setModalStep(null);
+  }
+
+  function seeResult() {
+    if (atsResult) setModalStep(3);
   }
 
   function selectTarget(target: 'maker' | 'imported') {
     setAnalysisTarget(target);
     if (jobDescription.trim().length >= 20) {
-      void performAnalysis(target, importedResume);
+      void performAnalysis(target, importedResume, false);
     }
   }
 
@@ -167,7 +201,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
     setImportedResume(built);
     setAnalysisTarget('imported');
     if (jobDescription.trim().length >= 20) {
-      void performAnalysis('imported', built);
+      void performAnalysis('imported', built, false);
     }
   }
 
@@ -355,7 +389,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
         <button
           type="button"
           className="btn btn--outline"
-          disabled={jobLength < 20 || fetchingJob}
+          disabled={jobLength < 20 || fetchingJob || modalStep !== null}
           onClick={() => void performAnalysis(analysisTarget, importedResume)}
         >
           {fetchingJob ? 'Buscando a vaga...' : 'Analisar compatibilidade'}
@@ -373,36 +407,11 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
           </p>
         )}
         <div aria-live="polite">
-          {comparison && comparison.imported !== null && (
-            <>
-              <div className="summary-card__compare">
-                <div
-                  className={`compare-pill ${comparison.maker > comparison.imported ? 'compare-pill--winner' : ''}`}
-                >
-                  <span className="compare-pill__label">Criado no Maker</span>
-                  <span className="compare-pill__score">{comparison.maker}%</span>
-                  {comparison.maker > comparison.imported && (
-                    <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
-                  )}
-                </div>
-                <div
-                  className={`compare-pill ${comparison.imported > comparison.maker ? 'compare-pill--winner' : ''}`}
-                >
-                  <span className="compare-pill__label">Meu PDF importado</span>
-                  <span className="compare-pill__score">{comparison.imported}%</span>
-                  {comparison.imported > comparison.maker && (
-                    <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
-                  )}
-                </div>
-              </div>
-              {comparison.maker === comparison.imported && (
-                <p className="ats-analyzer__requirement" role="status">
-                  Empate técnico — os dois currículos têm o mesmo score nesta vaga.
-                </p>
-              )}
-            </>
+          {atsResult && modalStep === null && (
+            <button type="button" className="btn btn--outline" onClick={seeResult} style={{ marginTop: 10 }}>
+              Ver resultado ({atsResult.score}%)
+            </button>
           )}
-          {atsResult && <AtsReport result={atsResult} />}
         </div>
         </section>
       </details>
@@ -426,6 +435,52 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
       </footer>
 
       {previewUrl && <PdfPreviewModal url={previewUrl} resume={resume} onClose={() => setPreviewUrl(null)} />}
+      {modalStep !== null && (
+        <AnalysisModal
+          step={modalStep}
+          score={atsResult?.score ?? null}
+          tone={atsResult?.verdict.tone ?? 'mid'}
+          label={atsResult?.verdict.label ?? ''}
+          report={
+            atsResult ? (
+              <>
+                {comparison && comparison.imported !== null && (
+                  <>
+                    <div className="summary-card__compare">
+                      <div
+                        className={`compare-pill ${comparison.maker > comparison.imported ? 'compare-pill--winner' : ''}`}
+                      >
+                        <span className="compare-pill__label">Criado no Maker</span>
+                        <span className="compare-pill__score">{comparison.maker}%</span>
+                        {comparison.maker > comparison.imported && (
+                          <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
+                        )}
+                      </div>
+                      <div
+                        className={`compare-pill ${comparison.imported > comparison.maker ? 'compare-pill--winner' : ''}`}
+                      >
+                        <span className="compare-pill__label">Meu PDF importado</span>
+                        <span className="compare-pill__score">{comparison.imported}%</span>
+                        {comparison.imported > comparison.maker && (
+                          <span className="compare-pill__tag">Melhor encaixe nesta vaga</span>
+                        )}
+                      </div>
+                    </div>
+                    {comparison.maker === comparison.imported && (
+                      <p className="ats-analyzer__requirement" role="status">
+                        Empate técnico — os dois currículos têm o mesmo score nesta vaga.
+                      </p>
+                    )}
+                  </>
+                )}
+                <AtsReport result={atsResult} />
+              </>
+            ) : undefined
+          }
+          onCancel={closeModal}
+          onClose={() => setModalStep(null)}
+        />
+      )}
     </section>
   );
 }

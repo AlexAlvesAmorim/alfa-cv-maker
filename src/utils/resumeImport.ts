@@ -95,7 +95,7 @@ async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
       const content = await page.getTextContent();
       // Agrupa por linha (Y) e ordena por coluna (X): sem isso, layouts com
       // barra lateral/tabela saem com o texto embaralhado.
-      const rows = new Map<number, Array<{ x: number; text: string }>>();
+      const rows = new Map<number, RowPart[]>();
 
       for (const item of content.items) {
         if (!('str' in item)) continue;
@@ -103,14 +103,15 @@ async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
         if (!text) continue;
         const y = Math.round(item.transform[5]);
         const x = item.transform[4];
+        const part = { x, width: item.width, text };
         const row = rows.get(y);
-        if (row) row.push({ x, text });
-        else rows.set(y, [{ x, text }]);
+        if (row) row.push(part);
+        else rows.set(y, [part]);
       }
 
       const lines = [...rows.entries()]
         .sort((a, b) => b[0] - a[0])
-        .map(([, parts]) => joinLine(parts.sort((a, b) => a.x - b.x).map((part) => part.text)));
+        .flatMap(([, parts]) => breakRowOnGap(parts.sort((a, b) => a.x - b.x)));
       pageLines.push(lines.filter(Boolean));
     }
 
@@ -121,6 +122,29 @@ async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
   } finally {
     await loadingTask.destroy().catch(() => undefined);
   }
+}
+
+interface RowPart {
+  x: number;
+  width: number;
+  text: string;
+}
+
+// buraco grande entre dois pedacos = outra coluna, nao pode misturar
+export function breakRowOnGap(parts: RowPart[]): string[] {
+  const lines: string[] = [];
+  let current: string[] = [];
+  let prevRight = -Infinity;
+  for (const part of parts) {
+    if (current.length > 0 && part.x - prevRight > 60) {
+      lines.push(joinLine(current));
+      current = [];
+    }
+    current.push(part.text);
+    prevRight = part.x + part.width;
+  }
+  if (current.length > 0) lines.push(joinLine(current));
+  return lines.filter(Boolean);
 }
 
 function joinLine(parts: string[]): string {
@@ -163,14 +187,22 @@ function splitGlued(rest: string): string | null {
 }
 
 function isSectionHeader(line: string): HeaderHit | null {
-  if (line.length <= 40) {
+  // tira enfeite do comeco ("— Experiência —", "• Habilidades")
+  const clean = line.replace(/^[-•*·—–|~=\s]+/, '').trim() || line;
+  if (clean.length <= 40) {
     for (const [section, pattern] of SECTION_PATTERNS) {
-      const match = line.match(pattern);
+      const match = clean.match(pattern);
       if (!match) continue;
-      const remainder = line.slice(match[0].length).replace(/[^a-zà-ú]/gi, '');
+      const rest = clean.slice(match[0].length).trim();
+      // sobra de plural ("Experiências" -> "as") ou pedaco do titulo ("a Profissional")
+      const restNorm = rest.replace(/^[a-zà-ú]{1,3}\s+(?=[A-ZÀ-ÚÜ])/, '');
+      // resto colado precisa parecer titulo (": Inglês", "Acadêmica", "Inglês").
+      // se for frase normal ("em vendas") é conteudo, nao cabecalho.
+      if (restNorm && !/^[:–—-]/.test(restNorm) && !QUALIFIER_RE.test(restNorm) && !/^[A-ZÀ-ÚÜ]/.test(restNorm) && restNorm.length > 3) continue;
+      const remainder = clean.slice(match[0].length).replace(/[^a-zà-ú]/gi, '');
       if (remainder.length > 24) continue;
       // "Idiomas: Inglês" (separador) ou "IDIOMAS Inglês" (colado)
-      const value = inlineValue(line) ?? splitGlued(line.slice(match[0].length).trim());
+      const value = inlineValue(clean) ?? splitGlued(restNorm);
       if (value && isSectionHeaderShallow(value) === null) return { key: section, inline: value };
       return { key: section };
     }
@@ -180,7 +212,7 @@ function isSectionHeader(line: string): HeaderHit | null {
   // "FORMAÇÃO ACADÊMICA – Administração ...").
   for (const [section, pattern] of SECTION_PATTERNS) {
     const withSep = new RegExp(`^(${pattern.source})\\b([^:–—-]{0,28}?)\\s*[:–—-]\\s*(.{3,200})$`, 'i');
-    const sepMatch = line.match(withSep);
+    const sepMatch = clean.match(withSep);
     if (sepMatch) {
       const qualifier = (sepMatch[2] ?? '').trim();
       // Qualificador precisa ser continuação de título ("Acadêmica"), não frase ("em vendas")
@@ -191,9 +223,9 @@ function isSectionHeader(line: string): HeaderHit | null {
     }
     // Sem separador: chave + até 3 palavras em maiúscula + conteúdo em maiúscula.
     // A chave casa sem case-sensitive; o resto é case-sensitive de propósito.
-    const keyMatch = line.match(new RegExp(`^(${pattern.source})\\b`, 'i'));
+    const keyMatch = clean.match(new RegExp(`^(${pattern.source})\\b`, 'i'));
     if (!keyMatch) continue;
-    const gluedMatch = line
+    const gluedMatch = clean
       .slice(keyMatch[0].length)
       .match(/^((?:\s+[A-ZÀ-ÚÜ][\wà-úü'-]*){0,3})\s+([A-ZÀ-ÚÜ].{2,200})$/);
     if (!gluedMatch) continue;
