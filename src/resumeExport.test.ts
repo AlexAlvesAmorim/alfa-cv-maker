@@ -95,15 +95,15 @@ interface TrackedOverflow {
   kind: 'horizontal' | 'vertical';
 }
 
-function renderTracked(resume: ResumeData): { pages: number; overflows: TrackedOverflow[] } {
+interface TrackedText {
+  x: number;
+  page: number;
+}
+
+function renderTracked(resume: ResumeData): { pages: number; overflows: TrackedOverflow[]; texts: TrackedText[] } {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const overflows: TrackedOverflow[] = [];
-  let page = 1;
-  const origAddPage = doc.addPage.bind(doc) as (...args: never[]) => unknown;
-  doc.addPage = ((...args: never[]) => {
-    page += 1;
-    return origAddPage(...args);
-  }) as typeof doc.addPage;
+  const texts: TrackedText[] = [];
   const origText = doc.text.bind(doc) as (
     text: string | string[],
     x: number,
@@ -113,6 +113,8 @@ function renderTracked(resume: ResumeData): { pages: number; overflows: TrackedO
   doc.text = ((text: string | string[], x: number, y: number, options?: { align?: string }) => {
     const str = Array.isArray(text) ? text.join('') : String(text ?? '');
     if (str.trim() !== '' && Number.isFinite(x) && Number.isFinite(y)) {
+      const page = doc.getCurrentPageInfo().pageNumber;
+      texts.push({ x, page });
       const align = options?.align ?? 'left';
       const w = doc.getTextWidth(str);
       const left = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
@@ -126,7 +128,7 @@ function renderTracked(resume: ResumeData): { pages: number; overflows: TrackedO
     return origText(text, x, y, options);
   }) as typeof doc.text;
   renderResumeDoc(doc, resume);
-  return { pages: doc.getNumberOfPages(), overflows };
+  return { pages: doc.getNumberOfPages(), overflows, texts };
 }
 
 describe('export pdf de curriculo importado', () => {
@@ -143,6 +145,24 @@ describe('export pdf de curriculo importado', () => {
     for (const t of TEMPLATES) {
       const { pages } = renderTracked({ ...IMPORTADO_LONGO, layout: t.value });
       expect(pages, `modelo ${t.id}`).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('lateral longa nao empurra a coluna principal para fora da pagina 1', () => {
+    // 60 skills forcam a lateral do Canva/Executivo/Minimal para a pagina 2;
+    // a coluna principal precisa continuar comecando na pagina 1 (x > 70).
+    const pesado: ResumeData = {
+      ...IMPORTADO_LONGO,
+      skills: Array.from({ length: 60 }, (_, i) => `Habilidade ${i + 1} com descricao`).join(', '),
+    };
+    for (const id of ['canva', 'executivo', 'minimal'] as const) {
+      const template = TEMPLATES.find((t) => t.id === id);
+      if (!template) throw new Error(`template ${id} ausente`);
+      const { pages, texts, overflows } = renderTracked({ ...pesado, layout: template.value });
+      expect(pages, `paginas ${id}`).toBeGreaterThan(1);
+      expect(overflows, `estouros ${id}`).toEqual([]);
+      const mainNaPagina1 = texts.filter((entry) => entry.page === 1 && entry.x > 70);
+      expect(mainNaPagina1.length, `coluna principal vazia na pagina 1 (${id})`).toBeGreaterThan(0);
     }
   });
 });

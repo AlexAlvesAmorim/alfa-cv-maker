@@ -156,6 +156,21 @@ function drawFieldLines(cursor: Cursor, text: string, x: number, maxWidth: numbe
   cursor.y += lines.length * lineHeight + lineGap;
 }
 
+type AddPageFn = jsPDF['addPage'];
+
+/* Duas colunas (lateral + principal) dividem a mesma sequencia de paginas: a
+   lateral pagina primeiro e a principal precisa recomecar na pagina 1 — senao
+   a pagina 1 amanhece com a coluna principal vazia. Toda pagina nova, venha de
+   qual coluna vier, ja nasce com o fundo repintado. */
+function patchAddPage(doc: jsPDF, repaint: () => void): void {
+  const rawAddPage = doc.addPage.bind(doc) as (...args: never[]) => unknown;
+  doc.addPage = ((...args: never[]) => {
+    const result = rawAddPage(...args);
+    repaint();
+    return result;
+  }) as AddPageFn;
+}
+
 function drawColumns(
   cursor: Cursor,
   items: string[],
@@ -635,6 +650,7 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
     doc.setFillColor(...accent);
     doc.rect(0, 0, sidebarW, 50, 'F');
   };
+  patchAddPage(doc, paintSidebar);
   paintSidebar();
 
   const cursor: Cursor = { doc, y: 0 };
@@ -643,11 +659,7 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   // A lateral tem cursor proprio: antes usava o cursor do cabecalho (y=0) e o
   // ensureSpace nunca disparava — curriculo importado longo saia da pagina.
   const side: Cursor = { doc, y: 84 };
-  const ensureSide = (needed: number) => {
-    const before = doc.getNumberOfPages();
-    ensureSpace(side, needed, 60);
-    if (doc.getNumberOfPages() > before) paintSidebar();
-  };
+  const ensureSide = (needed: number) => ensureSpace(side, needed, 60);
   const sideX = 10;
   const sideW = sidebarW - sideX * 2;
 
@@ -680,17 +692,17 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   const sections = buildSections(resume);
   const skills = sections.find((section) => section.title === 'Habilidades');
   if (skills) {
+    // Paragrafo corrido em vez de uma linha por skill: importacao traz dezenas
+    // de habilidades e a lateral estreita virava paginas de quadradinhos.
     sidebarSection('Competências');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    for (const skill of skills.items) {
-      const lines = doc.splitTextToSize(skill, sideW - 4) as string[];
-      ensureSide(lines.length * 4.4);
-      doc.setFillColor(255, 255, 255);
-      doc.rect(sideX, side.y - 2.2, 1.8, 1.8, 'F');
-      doc.setTextColor(...SIDEBAR_TEXT);
-      lines.forEach((line, index) => doc.text(line, sideX + 4, side.y + index * 4.4));
-      side.y += lines.length * 4.4 + 1.4;
+    doc.setTextColor(...SIDEBAR_TEXT);
+    const skillLines = doc.splitTextToSize(skills.items.join('  •  '), sideW) as string[];
+    for (const line of skillLines) {
+      ensureSide(4.4);
+      doc.text(line, sideX, side.y);
+      side.y += 4.4;
     }
     side.y += 6;
   }
@@ -711,6 +723,8 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
     }
   }
 
+  // A lateral pode ter paginado: a principal sempre recomeca na pagina 1.
+  doc.setPage(1);
   const mainX = sidebarW + 12;
   const mainW = PAGE_W - mainX - 17;
   const main: Cursor = { doc, y: 28 };
@@ -747,9 +761,9 @@ function renderCanva(doc: jsPDF, resume: ResumeData): void {
   }
 
   const experience = sections.find((section) => section.title === 'Experiência Profissional');
-  if (experience) {
+  if (experience && hasJobs(resume)) {
     mainHeading('Experiência Profissional');
-    drawBullets(main, experience.items, mainX, mainW, BODY, accent, { size: 10 });
+    drawExperienceBlocks(main, resume, mainX, mainW, { company: INK, period: accent, body: BODY, bullet: accent });
   }
 
   const education = sections.find((section) => section.title === 'Formação Acadêmica');
@@ -852,20 +866,22 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
 
   const skills = sections.find((section) => section.title === 'Habilidades');
   if (skills) {
+    // Paragrafo corrido: importacao traz dezenas de skills para 56mm de coluna.
     sideHeading('Habilidades');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9.5);
-    for (const skill of skills.items) {
-      const lines = doc.splitTextToSize(skill, sideW - 4) as string[];
-      ensureSpace(side, lines.length * 4.6, 60);
-      doc.setFillColor(...headColor);
-      doc.rect(sideX, side.y - 2.3, 1.8, 1.8, 'F');
-      doc.setTextColor(...BODY);
-      lines.forEach((line, index) => doc.text(line, sideX + 4, side.y + index * 4.6));
-      side.y += lines.length * 4.6 + 1.4;
+    doc.setTextColor(...BODY);
+    const skillLines = doc.splitTextToSize(skills.items.join('  •  '), sideW) as string[];
+    for (const line of skillLines) {
+      ensureSpace(side, 4.6, 60);
+      doc.text(line, sideX, side.y);
+      side.y += 4.6;
     }
+    side.y += 3;
   }
 
+  // A lateral pode ter paginado: a principal sempre recomeca na pagina 1.
+  doc.setPage(1);
   const mainX = 86;
   const mainW = PAGE_W - mainX - 17;
   const main: Cursor = { doc, y: 72 };
@@ -889,9 +905,9 @@ function renderExecutivo(doc: jsPDF, resume: ResumeData): void {
   }
 
   const experience = sections.find((section) => section.title === 'Experiência Profissional');
-  if (experience) {
+  if (experience && hasJobs(resume)) {
     mainHeading('Experiência Profissional');
-    drawBullets(main, experience.items, mainX, mainW, BODY, headColor, { size: 10 });
+    drawExperienceBlocks(main, resume, mainX, mainW, { company: BLACK, period: headColor, body: BODY, bullet: headColor });
   }
 
   const education = sections.find((section) => section.title === 'Formação Acadêmica');
@@ -1008,6 +1024,7 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
     doc.line(86, 14, 86, 283);
   };
   paintMinimalBg();
+  patchAddPage(doc, paintMinimalBg);
 
   const sections = buildSections(resume);
   const find = (title: string) => sections.find((section) => section.title === title);
@@ -1020,13 +1037,9 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
     doc.addImage(resume.photo, 'PNG', leftX + (leftW - 36) / 2, 16, 36, 48);
   }
 
-  // Coluna esquerda com cursor proprio e repintura do fundo ao paginar
+  // Coluna esquerda com cursor proprio (antes sem paginacao: saia da pagina)
   const left: Cursor = { doc, y: resume.photo ? 74 : 22 };
-  const ensureLeft = (needed: number) => {
-    const before = doc.getNumberOfPages();
-    ensureSpace(left, needed, 22);
-    if (doc.getNumberOfPages() > before) paintMinimalBg();
-  };
+  const ensureLeft = (needed: number) => ensureSpace(left, needed, 22);
 
   const leftHeading = (title: string) => {
     ensureLeft(8);
@@ -1061,8 +1074,18 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
 
   const skills = find('Habilidades');
   if (skills) {
+    // Paragrafo corrido a direita: importacao traz dezenas de skills.
     leftHeading('Habilidades');
-    leftLines(skills.items);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MID);
+    const skillLines = doc.splitTextToSize(skills.items.join('  •  '), leftW) as string[];
+    for (const line of skillLines) {
+      ensureLeft(5);
+      doc.text(line, leftRight, left.y, { align: 'right' });
+      left.y += 5;
+    }
+    left.y += 6;
   }
 
   const languages = find('Idiomas');
@@ -1074,6 +1097,8 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
   leftHeading('Contato');
   leftLines(orderedContactParts(resume.contact));
 
+  // A lateral pode ter paginado: a principal sempre recomeca na pagina 1.
+  doc.setPage(1);
   const mainX = 94;
   const mainW = PAGE_W - mainX - 17;
   const main: Cursor = { doc, y: 22 };
