@@ -180,3 +180,55 @@ export function saveBlob(blob: Blob, fileName: string): void {
   anchor.click();
   URL.revokeObjectURL(url);
 }
+
+/* ---------- Sanitizacao para PDF (jsPDF usa fontes padrao WinAnsi) ----------
+   A helvetica/courier embutida no jsPDF so desenha o repertorio WinAnsi.
+   Qualquer emoji ou simbolo fora dele (icones de contato como envelope,
+   telefone e link vindos de digitacao ou de PDF importado) virava mojibake
+   do tipo "O=Uc" no documento final. Aqui esses caracteres somem (o layout
+   ja separa o contato com "|" e os itens com bullets proprios) e o resto
+   que tem leitura util (setas) vira ASCII. Acentos sao preservados. */
+
+const WIN_ANSI_EXTRA = new Set([...'\u0152\u0153\u0160\u0161\u0178\u017D\u017E\u0192\u02C6\u02DC\u2013\u2014\u2018\u2019\u201A\u201C\u201D\u201E\u2020\u2021\u2022\u2026\u2030\u2039\u203A\u20AC']);
+
+function isPdfSafeChar(char: string): boolean {
+  const code = char.codePointAt(0) ?? 0;
+  if (code >= 0x20 && code <= 0x7e) return true; // ASCII imprimivel
+  if (code === 0x0a || code === 0x09) return true; // quebra de linha e tab
+  if (code >= 0xa0 && code <= 0xff) return true; // latin-1 (acentos, c, o., a.)
+  return WIN_ANSI_EXTRA.has(char); // resto do WinAnsi (euro, aspas, travessao, bullet)
+}
+
+export function sanitizeForPdf(text: string): string {
+  let out = text;
+  // 1. Emojis + dingbats + simbolos graficos (inclui os icones de contato).
+  out = out.replace(/[\u{1F000}-\u{1FAFF}\u2600-\u26FF\u2700-\u27BF\u2B00-\u2BFF\uFE0E\uFE0F\u200D]/gu, '');
+  // 2. Controles invisiveis e zero-width (menos \n e \t).
+  out = out.replace(/[\u200B-\u200D\uFEFF\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+  // 3. Setas viram ASCII para nao perder o sentido ("A -> B").
+  out = out.replace(/[\u2192\u21D2\u27F6]/g, '->').replace(/[\u2190\u21D0\u27F5]/g, '<-').replace(/[\u2194\u21D4]/g, '<->');
+  // 4. So passa o que a fonte do jsPDF sabe desenhar.
+  out = Array.from(out).filter(isPdfSafeChar).join('');
+  // 5. Normaliza espacos sem mexer nas quebras de linha do resumo/formacao.
+  out = out.replace(/[ \t]{2,}/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{3,}/g, '\n\n');
+  return out.trim();
+}
+
+export function sanitizeResumeForPdf(resume: ResumeData): ResumeData {
+  return {
+    ...resume,
+    fullName: sanitizeForPdf(resume.fullName),
+    targetRole: sanitizeForPdf(resume.targetRole),
+    contact: sanitizeForPdf(resume.contact),
+    summary: sanitizeForPdf(resume.summary),
+    education: sanitizeForPdf(resume.education),
+    skills: sanitizeForPdf(resume.skills),
+    languages: sanitizeForPdf(resume.languages),
+    experiences: resume.experiences.map((experience) => ({
+      role: sanitizeForPdf(experience.role),
+      company: sanitizeForPdf(experience.company),
+      period: sanitizeForPdf(experience.period),
+      achievement: sanitizeForPdf(experience.achievement),
+    })),
+  };
+}

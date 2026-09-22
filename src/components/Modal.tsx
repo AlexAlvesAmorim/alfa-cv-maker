@@ -5,18 +5,24 @@ interface ModalProps {
   onClose: () => void;
   footer: ReactNode;
   children: ReactNode;
+  size?: 'default' | 'print';
+  eyebrow?: string;
 }
 
 const FOCUSABLE =
   'button, [href], input, select, textarea, iframe, [tabindex]:not([tabindex="-1"])';
 
-export function Modal({ title, onClose, footer, children }: ModalProps) {
+export function Modal({ title, onClose, footer, children, size = 'default', eyebrow }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog?.focus();
+
+    // Trava o scroll da página enquanto a prévia está aberta (sensação de "mesa de impressão")
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
@@ -43,6 +49,7 @@ export function Modal({ title, onClose, footer, children }: ModalProps) {
     window.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
       previous?.focus();
     };
   }, [onClose]);
@@ -54,14 +61,17 @@ export function Modal({ title, onClose, footer, children }: ModalProps) {
     <div className="modal-overlay" role="presentation" onClick={onOverlayClick}>
       <div
         ref={dialogRef}
-        className="modal"
+        className={`modal${size === 'print' ? ' modal--print' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
       >
         <div className="modal__header">
-          <h2 className="modal__title">{title}</h2>
+          <div className="modal__titles">
+            {eyebrow && <p className="modal__eyebrow">{eyebrow}</p>}
+            <h2 className="modal__title">{title}</h2>
+          </div>
           <button type="button" className="modal__close" onClick={onClose} aria-label="Fechar">
             ✕
           </button>

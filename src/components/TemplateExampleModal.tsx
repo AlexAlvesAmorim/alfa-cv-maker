@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Modal } from './Modal';
+import { PrintPreview } from './PrintPreview';
 
 interface TemplateExampleModalProps {
   url: string;
@@ -17,20 +18,29 @@ export function TemplateExampleModal({ url, label, onUse, onClose }: TemplateExa
 
   return (
     <Modal
+      size="print"
+      eyebrow="Prévia de impressão · A4 · PDF"
       title={`Exemplo preenchido — modelo ${label}`}
       onClose={onClose}
       footer={
         <>
-          <button type="button" className="btn btn--primary" onClick={onUse}>
-            Usar este modelo
-          </button>
-          <button type="button" className="btn btn--ghost" onClick={onClose}>
-            Fechar
-          </button>
+          <p className="modal__note">O PDF final sai exatamente assim, em folha A4.</p>
+          <div className="modal__actions">
+            <button type="button" className="btn btn--primary" onClick={onUse}>
+              Usar este modelo
+            </button>
+            <button type="button" className="btn btn--ghost" onClick={onClose}>
+              Fechar
+            </button>
+          </div>
         </>
       }
     >
-      <iframe className="modal__frame" src={url} title={`Exemplo de currículo no modelo ${label}`} />
+      <PrintPreview
+        url={url}
+        title={`Exemplo de currículo no modelo ${label}`}
+        metaLeft="Documento de exemplo · dados fictícios"
+      />
     </Modal>
   );
 }

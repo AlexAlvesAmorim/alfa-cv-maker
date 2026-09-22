@@ -26,6 +26,11 @@
   --radius-md: 12px;
   --radius-lg: 14px;
 
+  /* Identidade: display grotesca p/ títulos, mono de carimbo p/ selos e números.
+     Fallback 100% system — sem rede, o app segue idêntico em comportamento. */
+  --font-display: 'Archivo', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --font-stamp: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   font-family:
     'Segoe UI',
     system-ui,

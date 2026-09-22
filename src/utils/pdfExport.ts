@@ -5,6 +5,7 @@ import {
   buildSections,
   classifyContactPart,
   orderedContactParts,
+  sanitizeResumeForPdf,
   fileNameFor,
   getTemplateId,
   initialsOf,
@@ -327,6 +328,97 @@ function renderAts(doc: jsPDF, resume: ResumeData): void {
   }
 }
 
+/* Bloco de experiência compartilhado (ATS Dev + XYZ), no padrão da referência:
+   "Função - Empresa" em negrito 11pt com o período à direita na cor de
+   destaque, conquistas em bullets (um por linha do texto). */
+interface ExperienceBlockColors {
+  company: RGB;
+  period: RGB;
+  body: RGB;
+  bullet: RGB;
+}
+
+function hasJobs(resume: ResumeData): boolean {
+  return resume.experiences.some(
+    (job) => job.company.trim() !== '' || job.role.trim() !== '' || job.achievement.trim() !== '',
+  );
+}
+
+// Quebra a conquista em bullets: uma linha vira um bullet; se for linha única
+// com separadores "•", cada trecho vira um bullet (comum em texto colado).
+function splitAchievements(achievement: string): string[] {
+  const bullets: string[] = [];
+  for (const rawLine of achievement.split(/\r?\n/)) {
+    const parts = rawLine.split(/\s*[•▪◦]\s*/);
+    for (let part of parts) {
+      part = part.replace(/^[-–—]\s+/, '').trim();
+      if (part) bullets.push(part);
+    }
+  }
+  return bullets;
+}
+
+function drawExperienceBlocks(
+  cursor: Cursor,
+  resume: ResumeData,
+  x: number,
+  maxWidth: number,
+  colors: ExperienceBlockColors,
+): void {
+  const doc = cursor.doc;
+  const jobs = resume.experiences.filter(
+    (job) => job.company.trim() !== '' || job.role.trim() !== '' || job.achievement.trim() !== '',
+  );
+  jobs.forEach((job) => {
+    const company = job.company.trim();
+    const role = job.role.trim();
+    const period = job.period.trim();
+    const bullets = splitAchievements(job.achievement);
+    ensureSpace(cursor, 18);
+    // Linha 1: "Função - Empresa" em negrito 11pt + período à direita em 10pt
+    const left = [role, company].filter(Boolean).join(' - ') || 'Experiência';
+    doc.setFont('helvetica', 'bold');
+    if (period) {
+      doc.setFontSize(10);
+      const periodW = doc.getTextWidth(period);
+      doc.setFontSize(11);
+      doc.setTextColor(...colors.company);
+      const leftLines = doc.splitTextToSize(left, Math.max(maxWidth - periodW - 6, 60)) as string[];
+      leftLines.forEach((line: string, idx: number) => {
+        doc.text(line, x, cursor.y + idx * 4.6);
+      });
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.period);
+      doc.text(period, x + maxWidth, cursor.y, { align: 'right' });
+      cursor.y += leftLines.length * 4.6 + 1.4;
+    } else {
+      doc.setFontSize(11);
+      doc.setTextColor(...colors.company);
+      const leftLines = doc.splitTextToSize(left, maxWidth) as string[];
+      leftLines.forEach((line: string, idx: number) => {
+        doc.text(line, x, cursor.y + idx * 4.6);
+      });
+      cursor.y += leftLines.length * 4.6 + 1.4;
+    }
+    // Conquistas: um bullet por linha, à esquerda como na referência
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    bullets.forEach((bullet) => {
+      const bodyLines = doc.splitTextToSize(bullet, maxWidth - 4) as string[];
+      ensureSpace(cursor, bodyLines.length * 4.4 + 2);
+      doc.setTextColor(...colors.bullet);
+      doc.text('•', x, cursor.y);
+      doc.setTextColor(...colors.body);
+      bodyLines.forEach((line: string, idx: number) => {
+        doc.text(line, x + 3.5, cursor.y + idx * 4.4);
+      });
+      cursor.y += bodyLines.length * 4.4 + 1;
+    });
+    cursor.y += 2.4; // respiro entre blocos
+  });
+  cursor.y += 1;
+}
+
 /* ---------- ATS DEV (inspirado PDF Alex - single-column, 100% texto puro) ---------- */
 
 function renderAtsDev(doc: jsPDF, resume: ResumeData): void {
@@ -378,33 +470,11 @@ function renderAtsDev(doc: jsPDF, resume: ResumeData): void {
     cursor.y += 1;
   }
 
-  const experience = find('Experiência Profissional');
-  if (experience) {
-    // Usa título padrão ATS mas renderiza sem tabela, bullets compactos
+  if (hasJobs(resume)) {
+    // Bloco por experiência: empresa em destaque, função+período compactos, conquista justa
     drawHeading(cursor, 'Experiência Profissional', marginX, contentW, BLACK, { centered: false, ruleColor: BLACK, size: 11, charSpace: 0.3, upper: true });
-    // Cada experiência como: Role — Company (period): achievement como parágrafo justificado
-    experience.items.forEach((item) => {
-      ensureSpace(cursor, 10);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
-      doc.setTextColor(...DARK2);
-      // Separa cabeçalho da conquista para manter keywords de stack visíveis
-      const colonIdx = item.indexOf(':');
-      const head = colonIdx > 0 ? item.slice(0, colonIdx).trim() : item;
-      const body = colonIdx > 0 ? item.slice(colonIdx + 1).trim() : '';
-      const headLines = doc.splitTextToSize(head, contentW) as string[];
-      headLines.forEach((line: string, idx: number) => {
-        doc.text(line, marginX, cursor.y + idx * 4.6);
-      });
-      cursor.y += headLines.length * 4.6 + 1.5;
-      if (body) {
-        drawParagraph(cursor, `• ${body}`, marginX + 2, contentW - 2, BODY, { size: 9.2 });
-        cursor.y -= 2; // compensa padding extra
-      } else {
-        cursor.y += 1;
-      }
-    });
-    cursor.y += 2;
+    cursor.y -= 1.5; // aproxima o primeiro bloco do título
+    drawExperienceBlocks(cursor, resume, marginX, contentW, { company: BLACK, period: accentRgb(resume, BLACK), body: BODY, bullet: MID });
   }
 
   const education = find('Formação Acadêmica');
@@ -473,10 +543,9 @@ function renderXyz(doc: jsPDF, resume: ResumeData): void {
     cursor.y += 2;
   }
 
-  const experience = find('Experiência Profissional');
-  if (experience) {
+  if (hasJobs(resume)) {
     drawHeading(cursor, 'Experiência Profissional', marginX, contentW, headColor, { size: 11.5, charSpace: 0.3 });
-    drawBullets(cursor, experience.items, marginX, contentW, BODY, headColor, { size: 9.5 });
+    drawExperienceBlocks(cursor, resume, marginX, contentW, { company: BLACK, period: headColor, body: BODY, bullet: headColor });
   }
 
   const skills = find('Habilidades');
@@ -949,32 +1018,35 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
 /* ---------- DISPATCH ---------- */
 
 export function buildResumePdf(resume: ResumeData): Blob {
-  const template = getTemplateId(resume.layout);
+  // Texto do usuario pode trazer emojis/icones (digitados ou importados de outro
+  // PDF) que a fonte WinAnsi do jsPDF nao desenha — sanitiza antes de renderizar.
+  const data = sanitizeResumeForPdf(resume);
+  const template = getTemplateId(data.layout);
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   switch (template) {
     case 'classic':
-      renderClassic(doc, resume);
+      renderClassic(doc, data);
       break;
     case 'ats':
-      renderAts(doc, resume);
+      renderAts(doc, data);
       break;
     case 'ats-dev':
-      renderAtsDev(doc, resume);
+      renderAtsDev(doc, data);
       break;
     case 'xyz':
-      renderXyz(doc, resume);
+      renderXyz(doc, data);
       break;
     case 'executivo':
-      renderExecutivo(doc, resume);
+      renderExecutivo(doc, data);
       break;
     case 'clean':
-      renderClean(doc, resume);
+      renderClean(doc, data);
       break;
     case 'minimal':
-      renderMinimal(doc, resume);
+      renderMinimal(doc, data);
       break;
     default:
-      renderCanva(doc, resume);
+      renderCanva(doc, data);
   }
   return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
 }
