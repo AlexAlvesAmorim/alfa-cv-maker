@@ -22,7 +22,7 @@ const SECTION_PATTERNS: Array<[BucketKey, RegExp]> = [
   ['objective', /^objetivo|^cargo|^pretens[ãa]o|^career objective|^objective/i],
   ['summary', /^resumo|^perfil|^perfil profissional|^s[íi]ntese|^qualifica[çc][ãa]o profissional|^apresenta[çc][ãa]o|^sobre mim|^about|^summary/i],
   ['summary', /^projetos?(?=\s+em\s+destaque\b|\s*[:\-–—]|\s*$)|^portf[óo]lio/i],
-  ['experiences', /^experi[êe]nc|^experience|^professional experience|^work experience|^employment|^hist[óo]rico profissional|^emprego|^carreira|^atuacao profissional|^trajetoria/i],
+  ['experiences', /^experi[êe]ncias?|^experience|^professional experience|^work experience|^employment|^hist[óo]rico profissional|^emprego|^carreira|^atuacao profissional|^trajetoria/i],
   ['education', /^forma[çc][ãa]o|^escolaridade|^educa[çc][ãa]o|^education|^acad[êe]mic|^academic|^hist[óo]rico acad[êe]mico|^cursos?|^certifica[çc][õo]es/i],
   ['skills', /^habilidades?|^compet[êe]ncia?s?|^qualifica[çc][õo]es|^conhecimentos?|^skills?|^soft skills|^hard skills|^tecnologias?|^ferramentas/i],
   ['languages', /^idiomas?|^l[íi]nguas?|^languages?|^language/i],
@@ -192,6 +192,9 @@ function splitGlued(rest: string): string | null {
 function isSectionHeader(line: string): HeaderHit | null {
   // tira enfeite do comeco ("— Experiência —", "• Habilidades")
   const clean = line.replace(/^[-•*·—–|~=\s]+/, '').trim() || line;
+  // Cabeçalho combinado ("FORMAÇÃO, CERTIFICAÇÕES E IDIOMAS"): vira educação;
+  // o idioma é separado depois em parseResumeText.
+  if (/forma/i.test(clean) && /certifica/i.test(clean)) return { key: 'education' };
   if (clean.length <= 40) {
     for (const [section, pattern] of SECTION_PATTERNS) {
       const match = clean.match(pattern);
@@ -398,7 +401,7 @@ export function parseResumeText(text: string): ImportResult {
     // "Desenvolvedor Front-End | React • TypeScript" logo no topo é o objetivo
     if (!preludeObjective && line.includes('|') && line.length <= 90 && !/[.!?]$/.test(line)) {
       preludeObjective = line;
-      continue;
+      return;
     }
     summaryPrelude.push(line);
   });
