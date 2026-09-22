@@ -1,6 +1,6 @@
-import type { Experience, ResumeData } from '../types';
+import type { Experience, Project, ResumeData } from '../types';
 
-export type TemplateId = 'classic' | 'ats' | 'ats-dev' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal';
+export type TemplateId = 'classic' | 'ats' | 'ats-dev' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal' | 'referencia';
 
 export interface ResumeSection {
   title: string;
@@ -19,6 +19,35 @@ export function experienceLine(experience: Experience): string {
 
 export function experienceText(resume: ResumeData): string {
   return resume.experiences.map(experienceLine).join('\n');
+}
+
+export function projectLine(project: Project): string {
+  const head = [project.title, project.stack].filter(Boolean).join(' | ');
+  return [head, project.link, ...project.bullets].filter(Boolean).join('\n');
+}
+
+export function projectText(resume: ResumeData): string {
+  return resume.projects.map(projectLine).join('\n');
+}
+
+export function hasProjects(resume: ResumeData): boolean {
+  return resume.projects.some(
+    (project) => project.title.trim() !== '' || project.bullets.some((bullet) => bullet.trim() !== ''),
+  );
+}
+
+// Quebra a conquista em bullets: uma linha vira um bullet; se for linha única
+// com separadores "•", cada trecho vira um bullet (comum em texto colado).
+export function splitAchievements(achievement: string): string[] {
+  const bullets: string[] = [];
+  for (const rawLine of achievement.split(/\r?\n/)) {
+    const parts = rawLine.split(/\s*[•▪◦]\s*/);
+    for (let part of parts) {
+      part = part.replace(/^[-–—]\s+/, '').trim();
+      if (part) bullets.push(part);
+    }
+  }
+  return bullets;
 }
 
 export const ACCENT_PRESETS = [
@@ -57,8 +86,9 @@ export function rgbToHex(rgb: [number, number, number]): string {
 }
 
 export function getTemplateId(layout: string): TemplateId {
-  // importacao nao traz modelo, ai cai no padrao em vez de quebrar
+  // referencia e o padrao de saida (importacao sem modelo cai aqui)
   const value = (layout ?? '').toLowerCase();
+  if (value.includes('referencia') || value.includes('referência') || value.includes('padrao referencia') || value.includes('padrão referência')) return 'referencia';
   if (value.includes('clássico') || value.includes('classico')) return 'classic';
   // ats-dev deve ser testado antes de 'ats' genérico para não colidir
   if (value.includes('ats-dev') || value.includes('ats dev') || value.includes('dev ats')) return 'ats-dev';
@@ -67,7 +97,8 @@ export function getTemplateId(layout: string): TemplateId {
   if (value.includes('executivo')) return 'executivo';
   if (value.includes('clean') || value.includes('elegante')) return 'clean';
   if (value.includes('minimal')) return 'minimal';
-  return 'canva';
+  if (value.includes('moderno') || value.includes('barra lateral') || value.includes('canva')) return 'canva';
+  return 'referencia';
 }
 
 function cleanBullet(text: string): string {
@@ -229,6 +260,12 @@ export function sanitizeResumeForPdf(resume: ResumeData): ResumeData {
       company: sanitizeForPdf(experience.company),
       period: sanitizeForPdf(experience.period),
       achievement: sanitizeForPdf(experience.achievement),
+    })),
+    projects: resume.projects.map((project) => ({
+      title: sanitizeForPdf(project.title),
+      stack: sanitizeForPdf(project.stack),
+      link: sanitizeForPdf(project.link),
+      bullets: project.bullets.map((bullet) => sanitizeForPdf(bullet)),
     })),
   };
 }

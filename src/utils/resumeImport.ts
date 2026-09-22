@@ -1,4 +1,4 @@
-import type { Experience, ResumeData } from '../types';
+import type { Experience, Project, ResumeData } from '../types';
 
 export interface ImportResult {
   fields: Partial<ResumeData>;
@@ -15,13 +15,13 @@ const CITY_DASH_RE = /[A-ZÁ-Ú][a-zá-ú]+(?:\s+(?:de|do|da|dos|das)\s+[A-ZÁ-�
 const URL_RE = /https?:\/\/|www\./i;
 const YEAR_RANGE_PHONE_TRAP = /(19|20)\d{2}\s*[-–—]\s*(19|20)\d{2}/;
 
-type BucketKey = 'summary' | 'objective' | 'experiences' | 'education' | 'skills' | 'languages';
+type BucketKey = 'summary' | 'objective' | 'experiences' | 'projects' | 'education' | 'skills' | 'languages';
 
 const SECTION_PATTERNS: Array<[BucketKey, RegExp]> = [
   // objetivo separado do resumo: vira cargo (ou resumo quando é texto longo)
   ['objective', /^objetivo|^cargo|^pretens[ãa]o|^career objective|^objective/i],
   ['summary', /^resumo|^perfil|^perfil profissional|^s[íi]ntese|^qualifica[çc][ãa]o profissional|^apresenta[çc][ãa]o|^sobre mim|^about|^summary/i],
-  ['summary', /^projetos?(?=\s+em\s+destaque\b|\s*[:\-–—]|\s*$)|^portf[óo]lio/i],
+  ['projects', /^projetos?(?=\s+em\s+destaque\b|\s*[:\-–—]|\s*$)|^portf[óo]lio|^projects?|^portfolio/i],
   ['experiences', /^experi[êe]ncias?|^experience|^professional experience|^work experience|^employment|^hist[óo]rico profissional|^emprego|^carreira|^atuacao profissional|^trajetoria/i],
   ['education', /^forma[çc][ãa]o|^escolaridade|^educa[çc][ãa]o|^education|^acad[êe]mic|^academic|^hist[óo]rico acad[êe]mico|^cursos?|^certifica[çc][õo]es/i],
   ['skills', /^habilidades?|^compet[êe]ncia?s?|^qualifica[çc][õo]es|^conhecimentos?|^skills?|^soft skills|^hard skills|^tecnologias?|^ferramentas/i],
@@ -225,6 +225,8 @@ function isSectionHeader(line: string): HeaderHit | null {
       if (qualifier && !/^[A-ZÀ-ÚÜ]/.test(qualifier)) continue;
       const value = (sepMatch[3] ?? '').trim();
       if (!value || PERIOD_RE.test(value)) continue;
+      // "PROJETOS EM DESTAQUE - PRODUTOS COM..." é subtítulo, não projeto.
+      if (section === 'projects' && qualifier && value.length > 24) return { key: section };
       return { key: section, inline: value };
     }
     // Sem separador: chave + até 3 palavras em maiúscula + conteúdo em maiúscula.
@@ -328,6 +330,49 @@ function inferTargetRole(summary: string): string {
   return match[1].split(/[.;\n]/)[0].trim();
 }
 
+const PROJECT_LINK_RE = /^https?:\/\/|www\.|^youtu\.be\/|^github\.com\//i;
+
+/** Agrupa as linhas da secao de projetos em blocos: titulo (+ stack) + link + bullets. */
+export function parseProjects(lines: string[]): Project[] {
+  const projects: Project[] = [];
+  let current: Project | null = null;
+  const push = () => {
+    if (current && (current.title || current.stack || current.link || current.bullets.length > 0)) {
+      projects.push(current);
+    }
+  };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (/^[-•*·]\s*/.test(line)) {
+      const bulletText = line.replace(/^[-•*·]+\s*/, '').trim();
+      if (!bulletText) continue;
+      if (!current) current = { title: '', stack: '', link: '', bullets: [] };
+      current.bullets.push(bulletText);
+      continue;
+    }
+    if (PROJECT_LINK_RE.test(line) && current && !current.link) {
+      current.link = line;
+      continue;
+    }
+    push();
+    current = { title: '', stack: '', link: '', bullets: [] };
+    if (PROJECT_LINK_RE.test(line)) {
+      current.link = line;
+      continue;
+    }
+    const sep = line.search(/\s*[|—–]\s*|\s+-\s+/);
+    if (sep === -1) {
+      current.title = line;
+    } else {
+      current.title = line.slice(0, sep).trim();
+      current.stack = line.slice(sep).replace(/^\s*[|—–:-]\s*/, '').trim();
+    }
+  }
+  push();
+  return projects.slice(0, 12);
+}
+
 export function parseResumeText(text: string): ImportResult {
   const lines = text
     .split(/\r?\n/)
@@ -360,8 +405,9 @@ export function parseResumeText(text: string): ImportResult {
     }
     expectRoleNext = false;
     if (current) {
-      // Contato no meio de seção (layout 2 colunas/barra lateral): resgata
-      if (current !== 'experiences' && current !== 'objective' && isContactLine(line)) {
+      // Contato no meio de seção (layout 2 colunas/barra lateral): resgata.
+      // Projetos ficam de fora: links de repo/demo pertencem ao projeto.
+      if (current !== 'experiences' && current !== 'objective' && current !== 'projects' && isContactLine(line)) {
         contactParts.push(line);
         return;
       }
@@ -475,6 +521,8 @@ export function parseResumeText(text: string): ImportResult {
     if (role) fields.targetRole = role;
   }
   if (experiences.length > 0) fields.experiences = experiences;
+  const projects = parseProjects(buckets.projects ?? []);
+  if (projects.length > 0) fields.projects = projects;
   let educationLines = buckets.education ?? [];
   const rawSkillLines = buckets.skills ?? [];
   const languageLines = buckets.languages ?? [];
@@ -502,6 +550,7 @@ export function parseResumeText(text: string): ImportResult {
   if (fields.targetRole) recognized.push('objetivo');
   if (fields.summary) recognized.push('resumo');
   if (fields.experiences) recognized.push(`${fields.experiences.length} experiência${fields.experiences.length > 1 ? 's' : ''}`);
+  if (fields.projects) recognized.push(`${fields.projects.length} projeto${fields.projects.length > 1 ? 's' : ''}`);
   if (fields.education) recognized.push('formação');
   if (fields.skills) recognized.push('habilidades');
   if (fields.languages) recognized.push('idiomas');

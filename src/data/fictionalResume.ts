@@ -21,6 +21,14 @@ export const FICTIONAL_RESUME: ResumeData = {
       achievement: 'Entreguei 8 sites institucionais responsivos para pequenos negócios locais',
     },
   ],
+  projects: [
+    {
+      title: 'Portfólio Pessoal',
+      stack: 'React | TypeScript | Vite',
+      link: 'github.com/anabferreira/portfolio',
+      bullets: ['Site responsivo com tema claro/escuro e formulário de contato funcional'],
+    },
+  ],
   education: 'Análise e Desenvolvimento de Sistemas — Faculdade Alfa (cursando 4º semestre)',
   skills: 'React, TypeScript, Git, CSS, Figma, Acessibilidade, Trabalho em equipe',
   languages: 'Inglês intermediário',

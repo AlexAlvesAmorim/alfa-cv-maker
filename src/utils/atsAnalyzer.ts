@@ -1,5 +1,5 @@
 import type { ResumeData } from '../types';
-import { experienceText } from './resumeContent';
+import { experienceText, projectText } from './resumeContent';
 
 /* ============ stopwords: PT comum + verbos genéricos + benefícios + boilerplate ============ */
 
@@ -426,7 +426,7 @@ function extractSeniority(raw: string): string[] {
 
 function resumeLayers(resume: ResumeData): { strong: string; medium: string; weak: string } {
   return {
-    strong: canon(`${resume.skills} ${experienceText(resume)} ${resume.languages}`),
+    strong: canon(`${resume.skills} ${experienceText(resume)} ${projectText(resume)} ${resume.languages}`),
     medium: canon(`${resume.summary} ${resume.targetRole}`),
     weak: canon(`${resume.fullName} ${resume.education} ${resume.contact}`),
   };

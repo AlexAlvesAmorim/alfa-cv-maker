@@ -33,7 +33,7 @@ function loadDraft(): Draft | null {
 export function useDraft() {
   // Lazy initializer: lê o storage uma vez por montagem, sem ref durante o render.
   const [initialDraft] = useState<Draft | null>(loadDraft);
-  const [resume, setResume] = useState<ResumeData>(() => initialDraft?.resume ?? EMPTY_RESUME);
+  const [resume, setResume] = useState<ResumeData>(() => ({ ...EMPTY_RESUME, ...(initialDraft?.resume ?? {}) }));
   const [stepIndex, setStepIndex] = useState(() => initialDraft?.stepIndex ?? 0);
 
   useEffect(() => {

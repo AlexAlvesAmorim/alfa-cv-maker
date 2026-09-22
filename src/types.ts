@@ -13,6 +13,13 @@ export interface Experience {
   achievement: string;
 }
 
+export interface Project {
+  title: string;
+  stack: string;
+  link: string;
+  bullets: string[];
+}
+
 export interface ResumeData {
   fullName: string;
   targetRole: string;
@@ -20,6 +27,7 @@ export interface ResumeData {
   contact: string;
   summary: string;
   experiences: Experience[];
+  projects: Project[];
   education: string;
   skills: string;
   languages: string;
@@ -62,6 +70,7 @@ export const EMPTY_RESUME: ResumeData = {
   contact: '',
   summary: '',
   experiences: [],
+  projects: [],
   education: '',
   skills: '',
   languages: '',

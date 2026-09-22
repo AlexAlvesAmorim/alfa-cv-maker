@@ -314,7 +314,31 @@ function Minimal() {
   );
 }
 
+function Referencia() {
+  return (
+    <Page>
+      <R x={45} y={20} w={120} h={11} c="#221416" />
+      <R x={60} y={36} w={90} h={5} c="#221416" />
+      <R x={52} y={46} w={106} h={3.5} c="#8a8a88" />
+      <R x={64} y={52} w={82} h={3.5} c="#8a8a88" />
+      {[66, 108, 150, 192, 232].map((y, section) => (
+        <g key={y}>
+          <R x={16} y={y} w={60 - section * 4} h={6} c="#402C64" />
+          <rect x={16} y={y + 9} width={178} height={1.2} fill="#402C64" />
+          {[0, 1, 2].slice(0, section === 4 ? 2 : 3).map((index) => (
+            <g key={index}>
+              <C cx={19} cy={y + 17 + index * 8} r={1.4} c="#402C64" />
+              <R x={24} y={y + 15 + index * 8} w={150 - index * 14} h={3.5} c="#a8a8a8" />
+            </g>
+          ))}
+        </g>
+      ))}
+    </Page>
+  );
+}
+
 const THUMBS: Record<string, () => React.JSX.Element> = {
+  referencia: Referencia,
   classic: Classic,
   ats: Ats,
   'ats-dev': AtsDev,

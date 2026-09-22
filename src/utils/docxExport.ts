@@ -22,6 +22,7 @@ import {
   getTemplateId,
   initialsOf,
   saveBlob,
+  splitAchievements,
 } from './resumeContent';
 
 function dataUrlToBytes(dataUrl: string): Uint8Array {
@@ -699,6 +700,88 @@ function buildMinimalDoc(resume: ResumeData): Document {
   return baseDocument('Calibri', [table], true);
 }
 
+/* ---------- REFERÊNCIA (padrão do PDF Alex: serif, coluna única, ATS) ---------- */
+
+function buildReferenciaChildren(resume: ResumeData): (Paragraph | Table)[] {
+  const PURPLE = '402C64';
+  const SERIF = 'Times New Roman';
+  const out: (Paragraph | Table)[] = [
+    centered(resume.fullName || 'Nome não informado', { size: 44, bold: true, color: INK, font: SERIF, after: 40 }),
+    centered(resume.targetRole || '', { size: 22, bold: true, color: INK, font: SERIF, after: 60 }),
+  ];
+
+  const parts = orderedContactParts(resume.contact);
+  const isSocial = (part: string) => /github\.com|linkedin\.com/i.test(part);
+  const baseLine = parts.filter((part) => !isSocial(part) && !/^https?:\/\//i.test(part)).join('  |  ');
+  const socialLine = parts.filter((part) => isSocial(part)).join('  |  ');
+  const extraLine = parts.filter((part) => !isSocial(part) && /^https?:\/\//i.test(part)).join('  |  ');
+  for (const line of [baseLine, socialLine, extraLine]) {
+    if (line) out.push(centered(line, { size: 19, color: BODY, font: SERIF, after: 30 }));
+  }
+
+  const refHeading = (title: string) => heading(title, PURPLE, { upper: true, size: 27, ruleColor: PURPLE, font: SERIF });
+
+  if (resume.summary.trim()) {
+    out.push(refHeading('Resumo Profissional'));
+    out.push(paragraph([run(resume.summary.trim(), { font: SERIF })], 160));
+  }
+
+  const sections = buildSections(resume);
+  const skills = sections.find((section) => section.title === 'Habilidades');
+  if (skills) {
+    out.push(refHeading('Competências Técnicas'));
+    for (const item of skills.items) {
+      const colon = item.indexOf(':');
+      if (colon > 0 && colon < 60) {
+        out.push(
+          new Paragraph({
+            children: [
+              run(item.slice(0, colon + 1), { bold: true, font: SERIF }),
+              run(item.slice(colon + 1), { font: SERIF }),
+            ],
+            bullet: { level: 0 },
+            spacing: { after: 85, line: 276 },
+          }),
+        );
+      } else {
+        out.push(bullet(item));
+      }
+    }
+  }
+
+  if (resume.experiences.some((job) => job.role.trim() || job.company.trim() || job.achievement.trim())) {
+    out.push(refHeading('Experiência Profissional'));
+    for (const job of resume.experiences) {
+      const left = [job.role.trim(), job.company.trim()].filter(Boolean).join(' — ') || 'Experiência';
+      const head: TextRun[] = [run(left, { bold: true, font: SERIF })];
+      if (job.period.trim()) head.push(run(`    ${job.period.trim()}`, { italics: true, font: SERIF }));
+      out.push(paragraph(head, 60));
+      for (const item of splitAchievements(job.achievement)) out.push(bullet(item));
+    }
+  }
+
+  if (resume.projects.some((project) => project.title.trim() || project.bullets.length > 0)) {
+    out.push(refHeading('Projetos em Destaque'));
+    for (const project of resume.projects) {
+      const head: TextRun[] = [];
+      if (project.title.trim()) head.push(run(project.title.trim(), { bold: true, font: SERIF }));
+      if (project.stack.trim()) head.push(run(` — ${project.stack.trim()}`, { italics: true, font: SERIF }));
+      if (head.length > 0) out.push(paragraph(head, 60));
+      if (project.link.trim()) out.push(paragraph([run(project.link.trim(), { font: SERIF })], 60));
+      for (const item of project.bullets) out.push(bullet(item));
+    }
+  }
+
+  const education = sections.find((section) => section.title === 'Formação Acadêmica');
+  const languages = sections.find((section) => section.title === 'Idiomas');
+  const formation = [...(education?.items ?? []), ...(languages?.items ?? [])];
+  if (formation.length > 0) {
+    out.push(refHeading('Formação, Certificações e Idiomas'));
+    for (const item of formation) out.push(bullet(item));
+  }
+  return out;
+}
+
 /* ---------- DISPATCH ---------- */
 
 export async function buildResumeDocx(resume: ResumeData): Promise<Blob> {
@@ -712,6 +795,7 @@ export async function buildResumeDocx(resume: ResumeData): Promise<Blob> {
     executivo: buildExecutivoDoc(resume),
     clean: baseDocument('Georgia', buildCleanChildren(resume)),
     minimal: buildMinimalDoc(resume),
+    referencia: baseDocument('Times New Roman', buildReferenciaChildren(resume)),
   };
   return Packer.toBlob(docByTemplate[template]);
 }

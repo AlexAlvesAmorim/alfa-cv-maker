@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { breakRowOnGap, parseResumeText } from './utils/resumeImport';
+import { breakRowOnGap, parseProjects, parseResumeText } from './utils/resumeImport';
 
 const SAMPLE = `Maria Oliveira Santos
 (11) 98888-7777 | maria@email.com | São Paulo/SP | linkedin.com/in/maria
@@ -181,6 +181,7 @@ Desenvolvedor Front-End com certificação e 15 anos de suporte técnico.
 
 PROJETOS EM DESTAQUE - PRODUTOS COM CÓDIGO, RELEASE E DEMO
 ALFA PDF Reader | TypeScript | Electron
+github.com/AlexAlvesAmorim/AlfaPDF
 • Leitor PDF desktop para Windows.
 • Multi-abas e auto-update.
 
@@ -216,7 +217,11 @@ describe('importação de currículo pronto (estilo referência)', () => {
     expect(fields.contact).toContain('https://eu-alex-dev-hub-project.vercel.app/');
     expect(fields.contact ?? '').not.toContain('Desenvolvedor Front-End | React');
     expect(fields.summary).toContain('certificação');
-    expect(fields.summary).toContain('ALFA PDF Reader');
+    expect(fields.summary ?? '').not.toContain('ALFA PDF Reader');
+    expect(fields.projects?.[0]?.title).toContain('ALFA PDF Reader');
+    expect(fields.projects?.[0]?.stack).toContain('TypeScript');
+    expect(fields.projects?.[0]?.link).toContain('github.com/AlexAlvesAmorim/AlfaPDF');
+    expect(fields.projects?.[0]?.bullets.join(' ')).toContain('Leitor PDF desktop');
     expect(fields.education).toContain('CS50x');
     expect(fields.education ?? '').not.toContain('Inglês');
   });
@@ -246,5 +251,33 @@ describe('importação de currículo pronto (estilo referência)', () => {
     expect(fields.skills ?? '').not.toContain('Desenvolvimento');
     expect(fields.skills ?? '').not.toContain('Qualidade & DevOps');
     expect(fields.languages).toContain('Inglês Intermediário');
+  });
+
+  it('separa projetos em blocos com titulo, stack, link e bullets', () => {
+    const { fields, recognized } = parseResumeText(REFERENCE_STYLE);
+
+    expect(fields.projects).toHaveLength(1);
+    expect(fields.projects?.[0]?.title).toBe('ALFA PDF Reader');
+    expect(fields.projects?.[0]?.stack).toBe('TypeScript | Electron');
+    expect(fields.projects?.[0]?.link).toContain('github.com/AlexAlvesAmorim/AlfaPDF');
+    expect(fields.projects?.[0]?.bullets).toHaveLength(2);
+    expect(recognized).toContain('1 projeto');
+  });
+
+  it('parseProjects entende titulo com stack e link solto', () => {
+    const projects = parseProjects([
+      'Meu App | React | Node',
+      'github.com/eu/app',
+      '• Primeiro bullet',
+      '• Segundo bullet',
+      'Outro Projeto - Python',
+    ]);
+    expect(projects).toHaveLength(2);
+    expect(projects[0].title).toBe('Meu App');
+    expect(projects[0].stack).toBe('React | Node');
+    expect(projects[0].link).toBe('github.com/eu/app');
+    expect(projects[0].bullets).toEqual(['Primeiro bullet', 'Segundo bullet']);
+    expect(projects[1].title).toBe('Outro Projeto');
+    expect(projects[1].stack).toBe('Python');
   });
 });

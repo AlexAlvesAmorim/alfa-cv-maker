@@ -13,6 +13,13 @@ export interface TemplateInfo {
 
 export const TEMPLATES: TemplateInfo[] = [
   {
+    id: 'referencia',
+    value: 'Referência (padrão do PDF Alex)',
+    label: 'Referência',
+    description: 'Coluna única serif, padrão da referência — saída padrão da importação',
+    kind: 'ats',
+  },
+  {
     id: 'classic',
     value: 'Clássico (Curriculum Vitae tradicional)',
     label: 'Clássico',

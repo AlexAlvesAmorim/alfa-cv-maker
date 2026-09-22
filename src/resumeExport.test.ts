@@ -76,6 +76,14 @@ const IMPORTADO_LONGO: ResumeData = {
         'Atendimento a clientes corporativos de grande porte\nRedução de 40% no tempo médio de resolução de chamados',
     },
   ],
+  projects: [
+    {
+      title: 'Projeto Exemplo',
+      stack: 'React | TypeScript',
+      link: 'github.com/exemplo/projeto',
+      bullets: ['Primeiro bullet do projeto', 'Segundo bullet do projeto'],
+    },
+  ],
   education:
     'Análise e Desenvolvimento de Sistemas — Universidade Federal do Rio de Janeiro (concluído)\nCS50x - Harvard University - Certificado 2026',
   skills: 'React.js, TypeScript, Node.js, Electron, JavaScript, HTML5, CSS3, Git, Docker, Vitest, Figma, Redes, Hardware',

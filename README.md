@@ -26,7 +26,7 @@ resposta — com prévia ao vivo, rascunho automático e exportação profission
 - 💬 **Fluxo guiado em 9 etapas:** nome → contato → experiências → template → cargo objetivo → resumo → formação → habilidades → idiomas → foto (opcional)
 - 🤖 **Sugestões dinâmicas locais** (`src/data/dynamicSuggestions.ts`): geradas do seu perfil, sem chamada de IA externa
 - 🎯 **Alfa Match (ATS client-side):** cole a descrição da vaga e receba score 0–100, zonas de requisitos/diferenciais e palavras faltantes
-- 📄 **7 templates em PDF e DOCX:** render via `pdfExport.ts` + `docxExport.ts`, com modelo de barra lateral para foto
+- 📄 **8 templates em PDF e DOCX** (Referência primeiro — padrão da importação): render via `pdfExport.ts` + `docxExport.ts`, com modelo de barra lateral para foto
 - 📸 **Foto 3x4 com IA no navegador:** remoção de fundo via `@imgly/background-removal`, nada sai do seu PC
 - 📥 **Importação:** envie um PDF (`pdfjs-dist`) ou DOCX (`mammoth`) existente para pré-preencher
 - 💾 **Rascunho automático:** `localStorage` com migração v2→v3 — feche e retome de onde parou
@@ -67,7 +67,7 @@ src/
 ├── types.ts              # ResumeData, FIELD_CONSTRAINTS, EMPTY_RESUME
 ├── data/steps.ts         # as 9 etapas (perguntas, placeholders, sugestões)
 ├── data/dynamicSuggestions.ts  # sugestões contextuais por perfil
-├── data/templates.ts     # os 7 modelos + recomendação por perfil
+├── data/templates.ts     # os 8 modelos + recomendação por perfil
 ├── components/           # ChatMessage, ChatInput, ExperienceForm, ContactForm,
 │                         # PhotoUpload, TemplatePicker, SummaryCard, AlfaMatch...
 ├── utils/pdfExport.ts    # render PDF  |  utils/docxExport.ts  # render DOCX

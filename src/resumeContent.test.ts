@@ -41,7 +41,9 @@ describe('getTemplateId', () => {
     expect(getTemplateId('Executivo (faixa escura com foto)')).toBe('executivo');
     expect(getTemplateId('Clean (elegante, serif com foto)')).toBe('clean');
     expect(getTemplateId('Minimal (duas colunas sóbrias)')).toBe('minimal');
-    expect(getTemplateId('qualquer outra coisa')).toBe('canva');
+    expect(getTemplateId('Referência (padrão do PDF Alex)')).toBe('referencia');
+    expect(getTemplateId('qualquer outra coisa')).toBe('referencia');
+    expect(getTemplateId('')).toBe('referencia');
   });
 });
 

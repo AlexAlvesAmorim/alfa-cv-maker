@@ -300,6 +300,14 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
             </dd>
           </div>
           <div className="summary-card__item">
+            <dt>Projetos</dt>
+            <dd>
+              {resume.projects.length > 0
+                ? resume.projects.map((project) => project.title || project.stack).filter(Boolean).join(', ')
+                : 'Não informados — importe um PDF com projetos para preencher'}
+            </dd>
+          </div>
+          <div className="summary-card__item">
             <dt>Foto 3x4</dt>
             <dd>
               <button type="button" className="summary-card__edit" onClick={() => onEditField('photo')} aria-label={`Editar Foto 3x4: ${resume.photo ? 'adicionada' : 'não adicionada'}`}>

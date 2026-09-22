@@ -23,7 +23,7 @@ import type { ImportResult } from './utils/resumeImport';
 import { FIELD_CONSTRAINTS, SKIP_VALUE, type ResumeField } from './types';
 import { FINISH_MESSAGE, STEPS, WELCOME_MESSAGE, phaseForStep } from './data/steps';
 import { extraSuggestionsFor, recommendedTemplateId, suggestionsFor } from './data/dynamicSuggestions';
-import { findTemplateByInput } from './data/templates';
+import { findTemplateByInput, TEMPLATES } from './data/templates';
 import { cleanFullName } from './utils/resumeContent';
 
 export default function App() {
@@ -245,7 +245,9 @@ export default function App() {
   function applyImport(result: ImportResult) {
     flushBot();
     pushMessage('user', 'Importei meu currículo atual');
-    setResume((prev) => ({ ...prev, ...result.fields }));
+    // Importacao sem modelo cai no Referencia (padrao de saida da referencia).
+    const referencia = TEMPLATES.find((template) => template.id === 'referencia')?.value ?? '';
+    setResume((prev) => ({ ...prev, ...result.fields, layout: prev.layout || referencia }));
     setStepIndex(STEPS.length);
     setDraftText('');
     setIsTyping(true);
