@@ -17,6 +17,7 @@ import {
   accentHex,
   buildSections,
   classifyContactPart,
+  densityScale,
   orderedContactParts,
   fileNameFor,
   getTemplateId,
@@ -705,9 +706,11 @@ function buildMinimalDoc(resume: ResumeData): Document {
 function buildReferenciaChildren(resume: ResumeData): (Paragraph | Table)[] {
   const PURPLE = '402C64';
   const SERIF = 'Times New Roman';
+  const scale = densityScale(resume);
+  const sc = (n: number) => Math.round(n * scale);
   const out: (Paragraph | Table)[] = [
-    centered(resume.fullName || 'Nome não informado', { size: 44, bold: true, color: INK, font: SERIF, after: 40 }),
-    centered(resume.targetRole || '', { size: 22, bold: true, color: INK, font: SERIF, after: 60 }),
+    centered(resume.fullName || 'Nome não informado', { size: sc(44), bold: true, color: INK, font: SERIF, after: 40 }),
+    centered(resume.targetRole || '', { size: sc(22), bold: true, color: INK, font: SERIF, after: 60 }),
   ];
 
   const parts = orderedContactParts(resume.contact);
@@ -716,10 +719,10 @@ function buildReferenciaChildren(resume: ResumeData): (Paragraph | Table)[] {
   const socialLine = parts.filter((part) => isSocial(part)).join('  |  ');
   const extraLine = parts.filter((part) => !isSocial(part) && /^https?:\/\//i.test(part)).join('  |  ');
   for (const line of [baseLine, socialLine, extraLine]) {
-    if (line) out.push(centered(line, { size: 19, color: BODY, font: SERIF, after: 30 }));
+    if (line) out.push(centered(line, { size: sc(19), color: BODY, font: SERIF, after: 30 }));
   }
 
-  const refHeading = (title: string) => heading(title, PURPLE, { upper: true, size: 27, ruleColor: PURPLE, font: SERIF });
+  const refHeading = (title: string) => heading(title, PURPLE, { upper: true, size: sc(27), ruleColor: PURPLE, font: SERIF });
 
   if (resume.summary.trim()) {
     out.push(refHeading('Resumo Profissional'));

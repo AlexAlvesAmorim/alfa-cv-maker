@@ -91,6 +91,7 @@ const IMPORTADO_LONGO: ResumeData = {
   photo: '',
   photoCircle: '',
   accentColor: '',
+  fontScale: 1,
 };
 
 interface TrackedOverflow {
@@ -154,6 +155,24 @@ describe('export pdf de curriculo importado', () => {
       const { pages } = renderTracked({ ...IMPORTADO_LONGO, layout: t.value });
       expect(pages, `modelo ${t.id}`).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('densidade Enxuto reduz a fonte sem aumentar paginas', () => {
+    const render = (fontScale: number) => {
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const sizes: number[] = [];
+      const orig = doc.setFontSize.bind(doc) as (size: number) => unknown;
+      doc.setFontSize = ((size: number) => {
+        sizes.push(size);
+        return orig(size);
+      }) as typeof doc.setFontSize;
+      renderResumeDoc(doc, { ...IMPORTADO_LONGO, layout: 'Referência (padrão do PDF Alex)', fontScale });
+      return { pages: doc.getNumberOfPages(), maxSize: Math.max(...sizes) };
+    };
+    const normal = render(1);
+    const enxuto = render(0.84);
+    expect(enxuto.maxSize).toBeLessThan(normal.maxSize);
+    expect(enxuto.pages).toBeLessThanOrEqual(normal.pages);
   });
 
   it('lateral longa nao empurra a coluna principal para fora da pagina 1', () => {

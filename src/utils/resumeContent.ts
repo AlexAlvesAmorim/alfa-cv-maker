@@ -36,6 +36,25 @@ export function hasProjects(resume: ResumeData): boolean {
   );
 }
 
+export interface DensityOption {
+  id: string;
+  label: string;
+  scale: number;
+}
+
+export const DENSITY_OPTIONS: DensityOption[] = [
+  { id: 'enxuto', label: 'Enxuto', scale: 0.84 },
+  { id: 'normal', label: 'Normal', scale: 1 },
+  { id: 'amplo', label: 'Amplo', scale: 1.12 },
+];
+
+/** Multiplicador de fonte da exportação (Enxuto cabe em menos páginas). */
+export function densityScale(resume: ResumeData): number {
+  const scale = Number(resume.fontScale);
+  if (!Number.isFinite(scale) || scale <= 0) return 1;
+  return Math.min(1.3, Math.max(0.7, scale));
+}
+
 // Quebra a conquista em bullets: uma linha vira um bullet; se for linha única
 // com separadores "•", cada trecho vira um bullet (comum em texto colado).
 export function splitAchievements(achievement: string): string[] {

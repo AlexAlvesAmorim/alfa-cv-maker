@@ -34,6 +34,8 @@ export interface ResumeData {
   photo: string;
   photoCircle: string;
   accentColor: string;
+  /** Densidade do texto na exportação: 1 = normal (padrão) */
+  fontScale: number;
 }
 
 // Constraint values for hardening (can be overridden per deployment)
@@ -77,6 +79,7 @@ export const EMPTY_RESUME: ResumeData = {
   photo: '',
   photoCircle: '',
   accentColor: '',
+  fontScale: 1,
 };
 
 export const SKIP_VALUE = '__skip__';

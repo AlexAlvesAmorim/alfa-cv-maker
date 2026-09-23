@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { EMPTY_RESUME, type ResumeData, type ResumeField } from '../types';
-import { ACCENT_PRESETS, saveBlob } from '../utils/resumeContent';
+import { EMPTY_RESUME, type Project, type ResumeData, type ResumeField } from '../types';
+import { ACCENT_PRESETS, DENSITY_OPTIONS, densityScale, saveBlob } from '../utils/resumeContent';
 import { analyzeForJob, type AtsResult } from '../utils/atsAnalyzer';
 import { extractFirstUrl, resolveJobDescription } from '../utils/jobUrl';
 import { AtsReport } from './AtsReport';
@@ -13,21 +13,27 @@ interface SummaryCardProps {
   onRestart: () => void;
   onEditField: (field: ResumeField) => void;
   onAccentChange: (hex: string) => void;
+  onResumeUpdate: (fields: Partial<ResumeData>) => void;
   onGoMatch: () => void;
 }
 
-const FIELD_LABELS: Array<{ key: 'fullName' | 'targetRole' | 'layout' | 'contact' | 'summary' | 'education' | 'skills' | 'languages'; label: string }> = [
-  { key: 'fullName', label: 'Nome' },
-  { key: 'targetRole', label: 'Objetivo' },
+const FIELD_LABELS: Array<{ key: 'layout'; label: string }> = [
   { key: 'layout', label: 'Modelo escolhido' },
-  { key: 'contact', label: 'Contato' },
-  { key: 'summary', label: 'Resumo profissional' },
-  { key: 'education', label: 'Formação' },
-  { key: 'skills', label: 'Habilidades' },
-  { key: 'languages', label: 'Idiomas' },
 ];
 
-export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, onGoMatch }: SummaryCardProps) {
+type ManualTextKey = 'fullName' | 'targetRole' | 'contact' | 'summary' | 'education' | 'skills' | 'languages';
+
+const MANUAL_TEXT_FIELDS: Array<{ key: ManualTextKey; label: string; rows: number }> = [
+  { key: 'fullName', label: 'Nome', rows: 1 },
+  { key: 'targetRole', label: 'Objetivo', rows: 1 },
+  { key: 'contact', label: 'Contato', rows: 2 },
+  { key: 'summary', label: 'Resumo profissional', rows: 5 },
+  { key: 'education', label: 'Formação', rows: 4 },
+  { key: 'skills', label: 'Habilidades', rows: 3 },
+  { key: 'languages', label: 'Idiomas', rows: 2 },
+];
+
+export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, onResumeUpdate, onGoMatch }: SummaryCardProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ text: string; tone: 'error' | 'info' } | null>(null);
   const [emailBusy, setBusy] = useState<'email' | 'letter' | null>(null);
@@ -44,6 +50,9 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
   const [downloadedEver, setDownloadedEver] = useState(false);
   // null = modal fechado, 0..3 = fase da animacao
   const [modalStep, setModalStep] = useState<number | null>(null);
+  // edicao manual inline (sem voltar para o chat)
+  const [editingKey, setEditingKey] = useState<ManualTextKey | null>(null);
+  const [editingValue, setEditingValue] = useState('');
   const downloadedTimerRef = useRef<number | null>(null);
   const timersRef = useRef<number[]>([]);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -205,6 +214,28 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
     }
   }
 
+  function startManualEdit(key: ManualTextKey) {
+    setEditingValue(resume[key] ?? '');
+    setEditingKey(key);
+  }
+
+  function saveManualEdit() {
+    if (editingKey) onResumeUpdate({ [editingKey]: editingValue } as Partial<ResumeData>);
+    setEditingKey(null);
+  }
+
+  function updateProject(index: number, patch: Partial<Project>) {
+    onResumeUpdate({ projects: resume.projects.map((project, i) => (i === index ? { ...project, ...patch } : project)) });
+  }
+
+  function removeProject(index: number) {
+    onResumeUpdate({ projects: resume.projects.filter((_, i) => i !== index) });
+  }
+
+  function addProject() {
+    onResumeUpdate({ projects: [...resume.projects, { title: '', stack: '', link: '', bullets: [] }] });
+  }
+
   function removeComparison() {
     setImportedResume(null);
     setAnalysisTarget('maker');
@@ -269,6 +300,49 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
         </summary>
         <div className="summary-card__review-body">
         <dl className="summary-card__grid">
+          {MANUAL_TEXT_FIELDS.map(({ key, label, rows }) => (
+            <div className="summary-card__item" key={key}>
+              <dt>{label}</dt>
+              <dd>
+                {editingKey === key ? (
+                  <div className="summary-card__manual">
+                    <label className="summary-card__manual-label" htmlFor={`manual-${key}`}>
+                      Editar {label.toLowerCase()}
+                    </label>
+                    <textarea
+                      id={`manual-${key}`}
+                      className="summary-card__manual-input"
+                      rows={rows}
+                      value={editingValue}
+                      onChange={(event) => setEditingValue(event.target.value)}
+                    />
+                    <div className="summary-card__manual-actions">
+                      <button type="button" className="btn btn--primary" onClick={saveManualEdit}>
+                        Salvar
+                      </button>
+                      <button type="button" className="btn btn--outline" onClick={() => setEditingKey(null)}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="summary-card__text" style={{ whiteSpace: 'pre-line' }}>
+                      {resume[key] || 'Não informado'}
+                    </p>
+                    <button type="button" className="summary-card__edit" onClick={() => startManualEdit(key)} aria-label={`Editar ${label} manualmente`}>
+                      Editar
+                    </button>
+                  </>
+                )}
+                {key === 'contact' && contactMissingEmail && (
+                  <p className="summary-card__warn" role="status">
+                    Falta um e-mail no contato — muitos RH descartam currículo sem e-mail.
+                  </p>
+                )}
+              </dd>
+            </div>
+          ))}
           {FIELD_LABELS.map(({ key, label }) => (
             <div className="summary-card__item" key={key}>
               <dt>{label}</dt>
@@ -281,11 +355,6 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
                 >
                   {resume[key] || 'Não informado'}
                 </button>
-                {key === 'contact' && contactMissingEmail && (
-                  <p className="summary-card__warn" role="status">
-                    Falta um e-mail no contato — muitos RH descartam currículo sem e-mail.
-                  </p>
-                )}
               </dd>
             </div>
           ))}
@@ -302,9 +371,60 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
           <div className="summary-card__item">
             <dt>Projetos</dt>
             <dd>
-              {resume.projects.length > 0
-                ? resume.projects.map((project) => project.title || project.stack).filter(Boolean).join(', ')
-                : 'Não informados — importe um PDF com projetos para preencher'}
+              {resume.projects.length === 0 && (
+                <p className="summary-card__text">Não informados — importe um PDF com projetos para preencher.</p>
+              )}
+              {resume.projects.map((project, index) => (
+                <div className="summary-card__project" key={index}>
+                  <label className="summary-card__manual-label" htmlFor={`project-title-${index}`}>
+                    Projeto {index + 1} — título
+                  </label>
+                  <input
+                    id={`project-title-${index}`}
+                    className="summary-card__manual-input"
+                    value={project.title}
+                    onChange={(event) => updateProject(index, { title: event.target.value })}
+                    placeholder="Nome do projeto"
+                  />
+                  <label className="summary-card__manual-label" htmlFor={`project-stack-${index}`}>
+                    Stack
+                  </label>
+                  <input
+                    id={`project-stack-${index}`}
+                    className="summary-card__manual-input"
+                    value={project.stack}
+                    onChange={(event) => updateProject(index, { stack: event.target.value })}
+                    placeholder="React | TypeScript"
+                  />
+                  <label className="summary-card__manual-label" htmlFor={`project-link-${index}`}>
+                    Link
+                  </label>
+                  <input
+                    id={`project-link-${index}`}
+                    className="summary-card__manual-input"
+                    value={project.link}
+                    onChange={(event) => updateProject(index, { link: event.target.value })}
+                    placeholder="github.com/voce/projeto"
+                  />
+                  <label className="summary-card__manual-label" htmlFor={`project-bullets-${index}`}>
+                    Conquistas (uma por linha)
+                  </label>
+                  <textarea
+                    id={`project-bullets-${index}`}
+                    className="summary-card__manual-input"
+                    rows={3}
+                    value={project.bullets.join('\n')}
+                    onChange={(event) => updateProject(index, { bullets: event.target.value.split(/\r?\n/) })}
+                    placeholder="O que esse projeto entrega"
+                  />
+                  <button type="button" className="summary-card__restart-link" onClick={() => removeProject(index)}>
+                    Excluir projeto
+                  </button>
+                </div>
+              ))}
+              <button type="button" className="chip chip--save" onClick={addProject}>
+                + Adicionar projeto
+              </button>
             </dd>
           </div>
           <div className="summary-card__item">
@@ -340,6 +460,22 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
                 aria-label={preset.name}
                 title={preset.name}
               />
+            ))}
+          </div>
+        </div>
+        <div className="summary-card__accent">
+          <span>Tamanho do texto:</span>
+          <div className="summary-card__segmented" role="group" aria-label="Tamanho do texto na exportação">
+            {DENSITY_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={Math.abs(densityScale(resume) - option.scale) < 0.001}
+                onClick={() => onResumeUpdate({ fontScale: option.scale })}
+                title={option.id === 'enxuto' ? 'Fonte menor — cabe em menos páginas' : option.id === 'amplo' ? 'Fonte maior — mais páginas' : 'Tamanho padrão da referência'}
+              >
+                {option.label}
+              </button>
             ))}
           </div>
         </div>

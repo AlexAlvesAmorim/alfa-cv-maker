@@ -6,6 +6,7 @@ import {
   classifyContactPart,
   orderedContactParts,
   sanitizeResumeForPdf,
+  densityScale,
   fileNameFor,
   getTemplateId,
   hasProjects,
@@ -425,8 +426,10 @@ function drawExperienceBlocks(
   colors: ExperienceBlockColors,
   font: 'helvetica' | 'times' = 'helvetica',
   periodStyle: 'normal' | 'bold' | 'italic' = 'bold',
+  scale = 1,
 ): void {
   const doc = cursor.doc;
+  const sc = (n: number) => n * scale;
   const jobs = resume.experiences.filter(
     (job) => job.company.trim() !== '' || job.role.trim() !== '' || job.achievement.trim() !== '',
   );
@@ -435,50 +438,50 @@ function drawExperienceBlocks(
     const role = job.role.trim();
     const period = job.period.trim();
     const bullets = splitAchievements(job.achievement);
-    ensureSpace(cursor, 18);
+    ensureSpace(cursor, sc(18));
     // Linha 1: "Função - Empresa" em negrito 11pt + período à direita em 10pt
     const left = [role, company].filter(Boolean).join(' - ') || 'Experiência';
     doc.setFont(font, 'bold');
     if (period) {
-      doc.setFontSize(10);
+      doc.setFontSize(sc(10));
       const periodW = doc.getTextWidth(period);
-      doc.setFontSize(11);
+      doc.setFontSize(sc(11));
       doc.setTextColor(...colors.company);
-      const leftLines = doc.splitTextToSize(left, Math.max(maxWidth - periodW - 6, 60)) as string[];
+      const leftLines = doc.splitTextToSize(left, Math.max(maxWidth - periodW - sc(6), sc(60))) as string[];
       leftLines.forEach((line: string, idx: number) => {
-        doc.text(line, x, cursor.y + idx * 4.6);
+        doc.text(line, x, cursor.y + idx * sc(4.6));
       });
-      doc.setFontSize(10);
+      doc.setFontSize(sc(10));
       doc.setTextColor(...colors.period);
       doc.setFont(font, periodStyle);
       doc.text(period, x + maxWidth, cursor.y, { align: 'right' });
-      cursor.y += leftLines.length * 4.6 + 1.4;
+      cursor.y += leftLines.length * sc(4.6) + sc(1.4);
     } else {
-      doc.setFontSize(11);
+      doc.setFontSize(sc(11));
       doc.setTextColor(...colors.company);
       const leftLines = doc.splitTextToSize(left, maxWidth) as string[];
       leftLines.forEach((line: string, idx: number) => {
-        doc.text(line, x, cursor.y + idx * 4.6);
+        doc.text(line, x, cursor.y + idx * sc(4.6));
       });
-      cursor.y += leftLines.length * 4.6 + 1.4;
+      cursor.y += leftLines.length * sc(4.6) + sc(1.4);
     }
     // Conquistas: um bullet por linha, à esquerda como na referência
     doc.setFont(font, 'normal');
-    doc.setFontSize(9.5);
+    doc.setFontSize(sc(9.5));
     bullets.forEach((bullet) => {
-      const bodyLines = doc.splitTextToSize(bullet, maxWidth - 4) as string[];
-      ensureSpace(cursor, bodyLines.length * 4.4 + 2);
+      const bodyLines = doc.splitTextToSize(bullet, maxWidth - sc(4)) as string[];
+      ensureSpace(cursor, bodyLines.length * sc(4.4) + sc(2));
       doc.setTextColor(...colors.bullet);
       doc.text('•', x, cursor.y);
       doc.setTextColor(...colors.body);
       bodyLines.forEach((line: string, idx: number) => {
-        doc.text(line, x + 3.5, cursor.y + idx * 4.4);
+        doc.text(line, x + sc(3.5), cursor.y + idx * sc(4.4));
       });
-      cursor.y += bodyLines.length * 4.4 + 1;
+      cursor.y += bodyLines.length * sc(4.4) + sc(1);
     });
-    cursor.y += 2.4; // respiro entre blocos
+    cursor.y += sc(2.4); // respiro entre blocos
   });
-  cursor.y += 1;
+  cursor.y += sc(1);
 }
 
 /* ---------- ATS DEV (inspirado PDF Alex - single-column, 100% texto puro) ---------- */
@@ -1137,11 +1140,12 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
 /* ---------- REFERÊNCIA (padrão do PDF Alex: serif, coluna única, ATS) ---------- */
 
 /* Bullets com rótulo em negrito ("Front-End: React, ..."), como na referência. */
-function drawLabeledBullets(cursor: Cursor, items: string[], x: number, maxWidth: number, textColor: RGB, dotColor: RGB): void {
+function drawLabeledBullets(cursor: Cursor, items: string[], x: number, maxWidth: number, textColor: RGB, dotColor: RGB, scale = 1): void {
   const doc = cursor.doc;
-  const size = 10.5;
+  const sc = (n: number) => n * scale;
+  const size = sc(10.5);
   const lineHeight = size * 0.5;
-  const indent = 5;
+  const indent = sc(5);
   for (const item of items) {
     const colon = item.indexOf(':');
     const label = colon > 0 && colon < 60 ? item.slice(0, colon + 1) : '';
@@ -1149,7 +1153,7 @@ function drawLabeledBullets(cursor: Cursor, items: string[], x: number, maxWidth
     doc.setFont('times', 'normal');
     doc.setFontSize(size);
     const lines = doc.splitTextToSize(label ? `${label} ${rest}` : rest, maxWidth - indent) as string[];
-    ensureSpace(cursor, lines.length * lineHeight + 2);
+    ensureSpace(cursor, lines.length * lineHeight + sc(2));
     doc.setTextColor(...dotColor);
     doc.text('•', x, cursor.y);
     doc.setTextColor(...textColor);
@@ -1165,101 +1169,104 @@ function drawLabeledBullets(cursor: Cursor, items: string[], x: number, maxWidth
         doc.text(line, x + indent, ly);
       }
     });
-    cursor.y += lines.length * lineHeight + 2.4;
+    cursor.y += lines.length * lineHeight + sc(2.4);
   }
-  cursor.y += 3.5;
+  cursor.y += sc(3.5);
 }
 
 /* Projetos: "Título — stack" + link + bullets, como na referência. */
-function drawProjectBlocks(cursor: Cursor, resume: ResumeData, x: number, maxWidth: number): void {
+function drawProjectBlocks(cursor: Cursor, resume: ResumeData, x: number, maxWidth: number, scale = 1): void {
   const doc = cursor.doc;
+  const sc = (n: number) => n * scale;
   const items = resume.projects.filter((project) => project.title.trim() !== '' || project.bullets.length > 0);
   items.forEach((project) => {
     const title = project.title.trim();
     const stack = project.stack.trim();
     doc.setFont('times', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(sc(11));
     const prefix = stack ? `${title} — ` : title;
     const prefixW = doc.getTextWidth(prefix);
     doc.setFont('times', 'italic');
-    doc.setFontSize(11);
+    doc.setFontSize(sc(11));
     const stackW = doc.getTextWidth(stack);
     if (title && prefixW + stackW <= maxWidth) {
-      ensureSpace(cursor, 7);
+      ensureSpace(cursor, sc(7));
       doc.setFont('times', 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(sc(11));
       doc.setTextColor(...BLACK);
       doc.text(prefix, x, cursor.y);
       doc.setFont('times', 'italic');
       doc.text(stack, x + prefixW, cursor.y);
-      cursor.y += 5.5;
+      cursor.y += sc(5.5);
     } else {
       if (title) {
         const titleLines = doc.splitTextToSize(title, maxWidth) as string[];
-        ensureSpace(cursor, titleLines.length * 5.5 + 1);
+        ensureSpace(cursor, titleLines.length * sc(5.5) + sc(1));
         doc.setFont('times', 'bold');
-        doc.setFontSize(11);
+        doc.setFontSize(sc(11));
         doc.setTextColor(...BLACK);
-        titleLines.forEach((line, index) => doc.text(line, x, cursor.y + index * 5.5));
-        cursor.y += titleLines.length * 5.5 + 1;
+        titleLines.forEach((line, index) => doc.text(line, x, cursor.y + index * sc(5.5)));
+        cursor.y += titleLines.length * sc(5.5) + sc(1);
       }
       if (stack) {
         const stackLines = doc.splitTextToSize(stack, maxWidth) as string[];
-        ensureSpace(cursor, stackLines.length * 5.5 + 1);
+        ensureSpace(cursor, stackLines.length * sc(5.5) + sc(1));
         doc.setFont('times', 'italic');
-        doc.setFontSize(11);
+        doc.setFontSize(sc(11));
         doc.setTextColor(...BODY);
-        stackLines.forEach((line, index) => doc.text(line, x, cursor.y + index * 5.5));
-        cursor.y += stackLines.length * 5.5 + 1;
+        stackLines.forEach((line, index) => doc.text(line, x, cursor.y + index * sc(5.5)));
+        cursor.y += stackLines.length * sc(5.5) + sc(1);
       }
     }
     if (project.link.trim()) {
       doc.setFont('times', 'normal');
-      doc.setFontSize(9.5);
+      doc.setFontSize(sc(9.5));
       const linkLines = doc.splitTextToSize(project.link.trim(), maxWidth) as string[];
-      ensureSpace(cursor, linkLines.length * 4.6 + 1);
+      ensureSpace(cursor, linkLines.length * sc(4.6) + sc(1));
       doc.setTextColor(...BODY);
-      linkLines.forEach((line, index) => doc.text(line, x, cursor.y + index * 4.6));
-      cursor.y += linkLines.length * 4.6 + 1;
+      linkLines.forEach((line, index) => doc.text(line, x, cursor.y + index * sc(4.6)));
+      cursor.y += linkLines.length * sc(4.6) + sc(1);
     }
     doc.setFont('times', 'normal');
-    doc.setFontSize(10.5);
+    doc.setFontSize(sc(10.5));
     project.bullets.forEach((item) => {
-      const bodyLines = doc.splitTextToSize(item, maxWidth - 5) as string[];
-      ensureSpace(cursor, bodyLines.length * 5 + 2);
+      const bodyLines = doc.splitTextToSize(item, maxWidth - sc(5)) as string[];
+      ensureSpace(cursor, bodyLines.length * sc(5) + sc(2));
       doc.setTextColor(...BLACK);
       doc.text('•', x, cursor.y);
       doc.setTextColor(...BODY);
-      bodyLines.forEach((line, index) => doc.text(line, x + 5, cursor.y + index * 5));
-      cursor.y += bodyLines.length * 5 + 1.5;
+      bodyLines.forEach((line, index) => doc.text(line, x + sc(5), cursor.y + index * sc(5)));
+      cursor.y += bodyLines.length * sc(5) + sc(1.5);
     });
-    cursor.y += 3;
+    cursor.y += sc(3);
   });
-  cursor.y += 1;
+  cursor.y += sc(1);
 }
 
 function renderReferencia(doc: jsPDF, resume: ResumeData): void {
   const marginX = 17;
   const contentW = PAGE_W - marginX * 2;
   const cursor: Cursor = { doc, y: 22 };
+  const scale = densityScale(resume);
+  const sc = (n: number) => n * scale;
   const sections = buildSections(resume);
   const find = (title: string) => sections.find((section) => section.title === title);
 
   drawFieldLines(cursor, resume.fullName || 'Nome não informado', marginX, contentW, {
     font: 'times',
     style: 'bold',
-    size: 24,
+    size: sc(24),
     color: INK,
     align: 'center',
-    lineGap: 2,
+    lineGap: sc(2),
   });
   drawFieldLines(cursor, resume.targetRole, marginX, contentW, {
     font: 'times',
     style: 'bold',
-    size: 11.5,
+    size: sc(11.5),
     color: INK,
     align: 'center',
-    lineGap: 2,
+    lineGap: sc(2),
   });
 
   // Contato em até 3 linhas, como na referência: base | redes | resto.
@@ -1271,10 +1278,10 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
   for (const line of [baseLine, socialLine, extraLine]) {
     drawFieldLines(cursor, line, marginX, contentW, {
       font: 'times',
-      size: 9.5,
+      size: sc(9.5),
       color: BODY,
       align: 'center',
-      lineGap: 1.6,
+      lineGap: sc(1.6),
     });
   }
 
@@ -1283,7 +1290,7 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
       font: 'times',
       ruleColor: REF_PURPLE,
       upper: true,
-      size: 13.5,
+      size: sc(13.5),
     });
   };
 
@@ -1292,15 +1299,15 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
     drawParagraph(cursor, resume.summary.trim(), marginX, contentW, BODY, {
       font: 'times',
       align: 'justify',
-      size: 10.5,
+      size: sc(10.5),
     });
-    cursor.y += 2;
+    cursor.y += sc(2);
   }
 
   const skills = find('Habilidades');
   if (skills) {
     refHeading('Competências Técnicas');
-    drawLabeledBullets(cursor, skills.items, marginX, contentW, BODY, BLACK);
+    drawLabeledBullets(cursor, skills.items, marginX, contentW, BODY, BLACK, scale);
   }
 
   if (hasJobs(resume)) {
@@ -1313,12 +1320,13 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
       { company: BLACK, period: BODY, body: BODY, bullet: BLACK },
       'times',
       'italic',
+      scale,
     );
   }
 
   if (hasProjects(resume)) {
     refHeading('Projetos em Destaque');
-    drawProjectBlocks(cursor, resume, marginX, contentW);
+    drawProjectBlocks(cursor, resume, marginX, contentW, scale);
   }
 
   const education = find('Formação Acadêmica');
@@ -1326,7 +1334,7 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
   const formationItems = [...(education?.items ?? []), ...(languages?.items ?? [])];
   if (formationItems.length > 0) {
     refHeading('Formação, Certificações e Idiomas');
-    drawBullets(cursor, formationItems, marginX, contentW, BODY, BLACK, { font: 'times', size: 10.5 });
+    drawBullets(cursor, formationItems, marginX, contentW, BODY, BLACK, { font: 'times', size: sc(10.5) });
   }
 }
 

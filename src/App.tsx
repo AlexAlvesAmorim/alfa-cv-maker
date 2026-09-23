@@ -331,6 +331,7 @@ export default function App() {
             onRestart={handleRestart}
             onEditField={editField}
             onAccentChange={(hex) => setResume((prev) => ({ ...prev, accentColor: hex }))}
+            onResumeUpdate={(fields) => setResume((prev) => ({ ...prev, ...fields }))}
             onGoMatch={() => setMode('match')}
           />
         )}

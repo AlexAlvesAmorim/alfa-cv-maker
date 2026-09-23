@@ -35,4 +35,5 @@ export const FICTIONAL_RESUME: ResumeData = {
   photo: '',
   photoCircle: '',
   accentColor: '',
+  fontScale: 1,
 };
