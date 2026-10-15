@@ -4,7 +4,10 @@ import { analyzeForJob, type AtsResult } from '../utils/atsAnalyzer';
 import { experienceText } from '../utils/resumeContent';
 import type { ImportResult } from '../utils/resumeImport';
 import { extractFirstUrl, resolveJobDescription } from '../utils/jobUrl';
+import { AnimatePresence } from 'motion/react';
+import { ArrowLeft } from 'lucide-react';
 import { AtsReport } from './AtsReport';
+import { inferJobSubtitle, inferJobTitle } from '../utils/matchCard';
 import { AnalysisModal } from './AnalysisModal';
 import { ImportResume } from './ImportResume';
 
@@ -167,7 +170,7 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
     <div className="alfa-match">
       <div className="alfa-match__hero">
         <button type="button" className="alfa-match__back" onClick={onBack}>
-          ← Voltar ao assistente
+          <ArrowLeft size={14} aria-hidden="true" /> Voltar ao assistente
         </button>
         <h1 className="alfa-match__title">
           Alfa <span>Match</span>
@@ -246,17 +249,27 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
         </section>
       </div>
 
-      {modalStep !== null && (
-        <AnalysisModal
+      <AnimatePresence>
+        {modalStep !== null && (
+          <AnalysisModal
           step={modalStep}
           score={result?.score ?? null}
           tone={result?.verdict.tone ?? 'mid'}
           label={result?.verdict.label ?? ''}
-          report={result ? <AtsReport result={result} /> : undefined}
+          report={
+            result ? (
+              <AtsReport
+                result={result}
+                jobTitle={inferJobTitle(jobDescription, fields.targetRole)}
+                jobSubtitle={inferJobSubtitle(jobDescription, result)}
+              />
+            ) : undefined
+          }
           onCancel={closeModal}
           onClose={() => setModalStep(null)}
-        />
-      )}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

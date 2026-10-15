@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { AnimatePresence } from 'motion/react';
+import { FileText, Maximize2 } from 'lucide-react';
 import './App.css';
 import { Header } from './components/Header';
 import { ChatMessage } from './components/ChatMessage';
@@ -21,6 +24,7 @@ import { PrintPreview } from './components/PrintPreview';
 import type { ProcessedPhoto } from './utils/photo';
 import type { ImportResult } from './utils/resumeImport';
 import { FIELD_CONSTRAINTS, SKIP_VALUE, type ResumeField } from './types';
+import { withViewTransition } from './utils/viewTransition';
 import { FINISH_MESSAGE, STEPS, WELCOME_MESSAGE, phaseForStep } from './data/steps';
 import { extraSuggestionsFor, recommendedTemplateId, suggestionsFor } from './data/dynamicSuggestions';
 import { findTemplateByInput, TEMPLATES } from './data/templates';
@@ -35,6 +39,16 @@ export default function App() {
   const [returnToSummary, setReturnToSummary] = useState(false);
 
   const chatLogRef = useRef<HTMLDivElement | null>(null);
+  const [animateMessages] = useAutoAnimate<HTMLDivElement>();
+  // Callback estável: auto-animate dá setState e recriar a cada render
+  // entraria em loop (React 19 chama ref inline a cada render).
+  const setChatRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      chatLogRef.current = node;
+      animateMessages(node);
+    },
+    [animateMessages],
+  );
   const didStartRef = useRef(false);
   const pendingImportRef = useRef<ImportResult | null>(null);
   const [confirmingImport, setConfirmingImport] = useState(false);
@@ -92,42 +106,48 @@ export default function App() {
   }
 
   function advanceStep() {
-    if (returnToSummary) {
-      setReturnToSummary(false);
-      setStepIndex(STEPS.length);
+    withViewTransition(() => {
+      if (returnToSummary) {
+        setReturnToSummary(false);
+        setStepIndex(STEPS.length);
+        setDraftText('');
+        setIsTyping(true);
+        timerRef.current = window.setTimeout(() => {
+          setIsTyping(false);
+          pushMessage('bot', 'Pronto! Atualizei o painel abaixo com o que você ajustou.');
+        }, BOT_DELAY_MS);
+        return;
+      }
+      const nextQuestion = stepIndex + 1 < STEPS.length ? STEPS[stepIndex + 1].question : FINISH_MESSAGE;
+      setStepIndex((index) => index + 1);
       setDraftText('');
-      setIsTyping(true);
-      timerRef.current = window.setTimeout(() => {
-        setIsTyping(false);
-        pushMessage('bot', 'Pronto! Atualizei o painel abaixo com o que você ajustou.');
-      }, BOT_DELAY_MS);
-      return;
-    }
-    const nextQuestion = stepIndex + 1 < STEPS.length ? STEPS[stepIndex + 1].question : FINISH_MESSAGE;
-    setStepIndex((index) => index + 1);
-    setDraftText('');
-    botSay(nextQuestion);
+      botSay(nextQuestion);
+    });
   }
 
   function goBack() {
     if (stepIndex === 0) return;
     const target = Math.min(stepIndex, STEPS.length - 1) - (finished ? 0 : 1);
     if (target < 0) return;
-    flushBot();
-    setReturnToSummary(false);
-    setStepIndex(target);
-    setDraftText('');
-    botSay(STEPS[target].question);
+    withViewTransition(() => {
+      flushBot();
+      setReturnToSummary(false);
+      setStepIndex(target);
+      setDraftText('');
+      botSay(STEPS[target].question);
+    });
   }
 
   function editField(field: ResumeField) {
     const target = STEPS.findIndex((step) => step.id === field);
     if (target < 0) return;
-    flushBot();
-    setDraftText('');
-    setReturnToSummary(true);
-    setStepIndex(target);
-    botSay(STEPS[target].question);
+    withViewTransition(() => {
+      flushBot();
+      setDraftText('');
+      setReturnToSummary(true);
+      setStepIndex(target);
+      botSay(STEPS[target].question);
+    });
   }
 
   function submitPhoto(result: ProcessedPhoto) {
@@ -300,13 +320,13 @@ export default function App() {
         totalSteps={STEPS.length}
         phase={phaseForStep(stepIndex, finished)}
         mode={mode}
-        onModeChange={setMode}
+        onModeChange={(next) => withViewTransition(() => setMode(next))}
       />
       {mode === 'match' ? (
         <main className="chat">
           <AlfaMatch
             resume={resume}
-            onBack={() => setMode('chat')}
+            onBack={() => withViewTransition(() => setMode('chat'))}
             onResumeUpdate={(fields) => setResume((prev) => ({ ...prev, ...fields }))}
           />
         </main>
@@ -318,23 +338,25 @@ export default function App() {
           role="log"
           aria-label="Conversa com o assistente"
           aria-live="polite"
-          ref={chatLogRef}
+          ref={setChatRefs}
         >
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
           {isTyping && <TypingIndicator />}
         </div>
-        {finished && (
-          <SummaryCard
-            resume={resume}
-            onRestart={handleRestart}
-            onEditField={editField}
-            onAccentChange={(hex) => setResume((prev) => ({ ...prev, accentColor: hex }))}
-            onResumeUpdate={(fields) => setResume((prev) => ({ ...prev, ...fields }))}
-            onGoMatch={() => setMode('match')}
-          />
-        )}
+        <AnimatePresence>
+          {finished && (
+            <SummaryCard
+              resume={resume}
+              onRestart={handleRestart}
+              onEditField={editField}
+              onAccentChange={(hex) => setResume((prev) => ({ ...prev, accentColor: hex }))}
+              onResumeUpdate={(fields) => setResume((prev) => ({ ...prev, ...fields }))}
+              onGoMatch={() => withViewTransition(() => setMode('match'))}
+            />
+          )}
+        </AnimatePresence>
         {!finished && (
           <>
             {currentStep?.id === 'layout' && (
@@ -381,11 +403,7 @@ export default function App() {
                 <header className="live-preview__header">
                   <div className="live-preview__id">
                     <span className="live-preview__icon" aria-hidden="true">
-                      <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 1.5h5.5L13 5v9.5H4z" />
-                        <path d="M9.5 1.5V5H13" />
-                        <path d="M6 8h4M6 10.2h4" />
-                      </svg>
+                      <FileText size={15} />
                     </span>
                     <span className="live-preview__titles">
                       <span className="live-preview__title">
@@ -406,9 +424,7 @@ export default function App() {
                       onClick={() => setLiveExpanded(true)}
                       aria-label="Ampliar prévia do currículo"
                     >
-                      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" />
-                      </svg>
+                      <Maximize2 size={13} aria-hidden="true" />
                       Ampliar
                     </button>
                   </div>
@@ -424,7 +440,8 @@ export default function App() {
                 </footer>
               </section>
             )}
-            {liveExpanded && livePreviewUrl && (
+            <AnimatePresence>
+              {liveExpanded && livePreviewUrl && (
               <Modal
                 size="print"
                 eyebrow="Prévia de impressão · A4 · PDF"
@@ -447,7 +464,8 @@ export default function App() {
                   metaLeft="Rascunho ao vivo · atualiza a cada etapa"
                 />
               </Modal>
-            )}
+              )}
+            </AnimatePresence>
             {confirmingImport && (
               <div className="import-confirm">
                 <button type="button" className="chip chip--save" onClick={confirmReplace}>

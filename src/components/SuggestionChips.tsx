@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { SKIP_VALUE } from '../types';
 
 interface SuggestionChipsProps {
@@ -10,12 +11,13 @@ interface SuggestionChipsProps {
 
 export function SuggestionChips({ suggestions, extraSuggestions = [], optional, onPick }: SuggestionChipsProps) {
   const [expanded, setExpanded] = useState(false);
+  const [animateChips] = useAutoAnimate<HTMLDivElement>();
   const extrasVisible = (expanded ? extraSuggestions : []).filter((text) => !suggestions.includes(text));
 
   if (suggestions.length === 0 && extraSuggestions.length === 0 && !optional) return null;
 
   return (
-    <div className="suggestion-chips">
+    <div className="suggestion-chips" ref={animateChips}>
       {suggestions.map((text) => (
         <button key={`main-${text}`} type="button" className="chip" onClick={() => onPick(text)}>
           {text}

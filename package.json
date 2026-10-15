@@ -11,10 +11,13 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@formkit/auto-animate": "^0.10.0",
     "@imgly/background-removal": "^1.7.0",
     "docx": "^9.7.1",
     "jspdf": "^4.2.1",
+    "lucide-react": "^1.57.0",
     "mammoth": "^1.12.1",
+    "motion": "^14.2.0",
     "pdfjs-dist": "^6.2.108",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

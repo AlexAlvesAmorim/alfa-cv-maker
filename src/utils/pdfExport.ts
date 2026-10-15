@@ -994,6 +994,8 @@ function renderClean(doc: jsPDF, resume: ResumeData): void {
   const skills = find('Habilidades');
   if (skills) {
     cleanHeading('Habilidades');
+    // Parágrafo corrido: 3 colunas ocupariam ~39mm contra ~22mm aqui —
+    // o guardrail de 2 páginas do importado longo confirma. DOCX usa tabela.
     drawParagraph(cursor, skills.items.join('  •  '), marginX, PAGE_W - marginX * 2, BODY, { font: 'times', size: 11 });
   }
 

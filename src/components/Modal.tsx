@@ -1,4 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   title: string;
@@ -58,14 +60,26 @@ export function Modal({ title, onClose, footer, children, size = 'default', eyeb
     if (e.target === e.currentTarget) onClose();
   }
   return (
-    <div className="modal-overlay" role="presentation" onClick={onOverlayClick}>
-      <div
+    <motion.div
+      className="modal-overlay"
+      role="presentation"
+      onClick={onOverlayClick}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <motion.div
         ref={dialogRef}
         className={`modal${size === 'print' ? ' modal--print' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       >
         <div className="modal__header">
           <div className="modal__titles">
@@ -73,12 +87,12 @@ export function Modal({ title, onClose, footer, children, size = 'default', eyeb
             <h2 className="modal__title">{title}</h2>
           </div>
           <button type="button" className="modal__close" onClick={onClose} aria-label="Fechar">
-            ✕
+            <X size={16} />
           </button>
         </div>
         <div className="modal__body">{children}</div>
         <div className="modal__footer">{footer}</div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

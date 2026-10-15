@@ -1,4 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { Check, X } from 'lucide-react';
 
 // as 4 fases que aparecem no modal, na ordem
 const ANALYSIS_STEPS = [
@@ -20,6 +23,7 @@ interface AnalysisModalProps {
 
 export function AnalysisModal({ step, score, tone, label, report, onCancel, onClose }: AnalysisModalProps) {
   const boxRef = useRef<HTMLDivElement | null>(null);
+  const [animateSteps] = useAutoAnimate<HTMLOListElement>();
   const done = step >= ANALYSIS_STEPS.length - 1;
 
   useEffect(() => {
@@ -39,19 +43,30 @@ export function AnalysisModal({ step, score, tone, label, report, onCancel, onCl
   }
 
   return (
-    <div className="modal-overlay" onClick={closeOnOverlay}>
-      <div
+    <motion.div
+      className="modal-overlay"
+      onClick={closeOnOverlay}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <motion.div
         ref={boxRef}
         className={`modal analysis-modal ${done && report ? 'analysis-modal--wide' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="Analisando compatibilidade com a vaga"
         tabIndex={-1}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       >
         <div className="modal__header">
           <h2 className="modal__title">Alfa Match — analisando</h2>
           <button type="button" className="modal__close" onClick={onCancel} aria-label="Cancelar análise">
-            ✕
+            <X size={16} />
           </button>
         </div>
         <div className="modal__body analysis-modal__body">
@@ -63,7 +78,13 @@ export function AnalysisModal({ step, score, tone, label, report, onCancel, onCl
             )}
           </div>
           <p className="analysis-modal__status" role="status" aria-live="polite">
-            {done ? 'Análise concluída ✓' : `${ANALYSIS_STEPS[Math.min(step, ANALYSIS_STEPS.length - 1)]}...`}
+            {done ? (
+              <span className="analysis-modal__done">
+                Análise concluída <Check size={16} aria-hidden="true" />
+              </span>
+            ) : (
+              `${ANALYSIS_STEPS[Math.min(step, ANALYSIS_STEPS.length - 1)]}...`
+            )}
           </p>
           {done && label !== '' && <p className="analysis-modal__verdict">{label}</p>}
           <div
@@ -79,7 +100,7 @@ export function AnalysisModal({ step, score, tone, label, report, onCancel, onCl
               style={{ width: `${((Math.min(step, 3) + 1) / ANALYSIS_STEPS.length) * 100}%` }}
             />
           </div>
-          <ol className="analysis-steps">
+          <ol className="analysis-steps" ref={animateSteps}>
             {ANALYSIS_STEPS.map((name, index) => {
               const state = done || index < step ? 'done' : index === step ? 'doing' : 'todo';
               return (
@@ -89,7 +110,7 @@ export function AnalysisModal({ step, score, tone, label, report, onCancel, onCl
                   aria-current={state === 'doing' ? 'step' : undefined}
                 >
                   <span className="analysis-step__mark" aria-hidden="true">
-                    {state === 'done' ? '✓' : state === 'doing' ? '' : index + 1}
+                    {state === 'done' ? <Check size={12} /> : state === 'doing' ? '' : index + 1}
                     {state === 'doing' && <span className="photo-upload__spinner analysis-step__spinner" />}
                   </span>
                   {name}
@@ -111,7 +132,7 @@ export function AnalysisModal({ step, score, tone, label, report, onCancel, onCl
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

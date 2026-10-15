@@ -1,4 +1,6 @@
+import { ArrowLeft } from 'lucide-react';
 import { Logo } from './Logo';
+import { ThemePicker } from './ThemePicker';
 
 interface HeaderProps {
   step: number;
@@ -44,13 +46,20 @@ export function Header({ step, totalSteps, phase, mode, onModeChange }: HeaderPr
             <span className="header__progress-label">{phase} · {step}/{totalSteps}</span>
           </div>
         )}
+        <ThemePicker />
         <button
           type="button"
           className={`header__mode-btn ${!inChat ? 'header__mode-btn--active' : ''}`}
           aria-pressed={!inChat}
           onClick={() => onModeChange(inChat ? 'match' : 'chat')}
         >
-          {!inChat ? '← Assistente' : 'Alfa Match'}
+          {!inChat ? (
+            <>
+              <ArrowLeft size={14} aria-hidden="true" /> Assistente
+            </>
+          ) : (
+            'Alfa Match'
+          )}
         </button>
       </div>
     </header>

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { X } from 'lucide-react';
 import { EMPTY_RESUME, type Project, type ResumeData, type ResumeField } from '../types';
 import { ACCENT_PRESETS, DENSITY_OPTIONS, densityScale, saveBlob } from '../utils/resumeContent';
 import { analyzeForJob, type AtsResult } from '../utils/atsAnalyzer';
 import { extractFirstUrl, resolveJobDescription } from '../utils/jobUrl';
 import { AtsReport } from './AtsReport';
+import { inferJobSubtitle, inferJobTitle } from '../utils/matchCard';
 import { AnalysisModal } from './AnalysisModal';
 import { ImportResume } from './ImportResume';
 import { PdfPreviewModal } from './PdfPreviewModal';
@@ -243,7 +246,14 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
   }
 
   return (
-    <section className="summary-card" aria-label="Currículo pronto">
+    <motion.section
+      className="summary-card"
+      aria-label="Currículo pronto"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 12 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+    >
       <div className={`summary-card__hero ${downloadedEver ? 'summary-card__hero--celebrated' : ''}`}>
         <h2 ref={titleRef} tabIndex={-1} className="summary-card__title">
           {downloadedEver ? 'Currículo na mão ✓' : 'Pronto! Seu currículo está completo.'}
@@ -526,7 +536,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
               onClick={removeComparison}
               aria-label="Remover currículo importado da comparação"
             >
-              ✕
+              <X size={14} />
             </button>
           </div>
         )}
@@ -578,7 +588,10 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
         )}
       </footer>
 
-      {previewUrl && <PdfPreviewModal url={previewUrl} resume={resume} onClose={() => setPreviewUrl(null)} />}
+      <AnimatePresence>
+        {previewUrl && <PdfPreviewModal url={previewUrl} resume={resume} onClose={() => setPreviewUrl(null)} />}
+      </AnimatePresence>
+      <AnimatePresence>
       {modalStep !== null && (
         <AnalysisModal
           step={modalStep}
@@ -617,7 +630,11 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
                     )}
                   </>
                 )}
-                <AtsReport result={atsResult} />
+                <AtsReport
+                  result={atsResult}
+                  jobTitle={inferJobTitle(jobDescription, resume.targetRole)}
+                  jobSubtitle={inferJobSubtitle(jobDescription, atsResult)}
+                />
               </>
             ) : undefined
           }
@@ -625,6 +642,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
           onClose={() => setModalStep(null)}
         />
       )}
-    </section>
+      </AnimatePresence>
+    </motion.section>
   );
 }

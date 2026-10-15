@@ -22,6 +22,64 @@ describe('export pdf', () => {
   });
 });
 
+describe('habilidades em colunas', () => {
+  const SKILLS = ['React', 'TypeScript', 'Git', 'CSS', 'Figma', 'Acessibilidade', 'Trabalho em equipe'];
+  // PDF com colunas nativas (drawColumns). Clean usa parágrafo corrido de
+  // propósito: colunas ocupariam mais altura e quebrariam o limite de 2 páginas.
+  const PDF_COLUMN_IDS = ['classic', 'ats-dev', 'xyz'];
+  // DOCX com tabela de colunas (minimal: 2 colunas na lateral).
+  const DOCX_COLUMN_IDS = ['classic', 'ats-dev', 'xyz', 'clean', 'minimal'];
+
+  it('pdf em colunas nao perde nenhuma skill', () => {
+    for (const id of PDF_COLUMN_IDS) {
+      const template = TEMPLATES.find((t) => t.id === id);
+      if (!template) throw new Error(`template ${id} ausente`);
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const drawn: string[] = [];
+      const origText = doc.text.bind(doc) as (text: string | string[], x: number, y: number) => unknown;
+      doc.text = ((text: string | string[], x: number, y: number) => {
+        drawn.push(Array.isArray(text) ? text.join('') : String(text ?? ''));
+        return origText(text, x, y);
+      }) as typeof doc.text;
+      renderResumeDoc(doc, { ...FICTIONAL_RESUME, layout: template.value });
+      const all = drawn.join('\n');
+      for (const skill of SKILLS) {
+        expect(all, `${id} perdeu "${skill}" no pdf`).toContain(skill);
+      }
+    }
+  });
+
+  async function docxText(layout: string): Promise<string> {
+    const mammoth = await import('mammoth');
+    const blob = await buildResumeDocx({ ...FICTIONAL_RESUME, layout });
+    // mammoth no Node espera Buffer (arrayBuffer é API de browser).
+    const { value } = await mammoth.extractRawText({ buffer: Buffer.from(await blob.arrayBuffer()) });
+    return value;
+  }
+
+  it('docx em colunas nao perde nenhuma skill', async () => {
+    for (const id of DOCX_COLUMN_IDS) {
+      const template = TEMPLATES.find((t) => t.id === id);
+      if (!template) throw new Error(`template ${id} ausente`);
+      const value = await docxText(template.value);
+      for (const skill of SKILLS) {
+        expect(value, `${id} perdeu "${skill}" no docx`).toContain(skill);
+      }
+    }
+  });
+
+  it('modelos ATS continuam lineares (sem tabela)', async () => {
+    for (const id of ['ats', 'referencia'] as const) {
+      const template = TEMPLATES.find((t) => t.id === id);
+      if (!template) throw new Error(`template ${id} ausente`);
+      const value = await docxText(template.value);
+      for (const skill of SKILLS) {
+        expect(value, `${id} perdeu "${skill}" no docx`).toContain(skill);
+      }
+    }
+  });
+});
+
 describe('export docx', () => {
   it('gera docx com os dados de exemplo', async () => {
     const blob = await buildResumeDocx(FICTIONAL_RESUME);

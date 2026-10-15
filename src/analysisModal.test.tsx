@@ -21,7 +21,9 @@ describe('modal de analise', () => {
       <AnalysisModal step={3} score={82} tone="high" label="Candidatura forte" onCancel={() => {}} onClose={() => {}} />,
     );
     expect(screen.getByText('82%')).toBeInTheDocument();
-    expect(screen.getByText('Análise concluída ✓')).toBeInTheDocument();
+    expect(
+      screen.getByText(/análise concluída/i, { selector: '.analysis-modal__done' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Fechar' })).toBeInTheDocument();
   });
 

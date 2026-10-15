@@ -1,4 +1,5 @@
 import type { AtsResult } from '../utils/atsAnalyzer';
+import { MatchCard } from './MatchCard';
 
 function MissingGroup({
   title,
@@ -32,7 +33,15 @@ function MissingGroup({
   );
 }
 
-export function AtsReport({ result }: { result: AtsResult }) {
+export function AtsReport({
+  result,
+  jobTitle = 'Análise da vaga',
+  jobSubtitle,
+}: {
+  result: AtsResult;
+  jobTitle?: string;
+  jobSubtitle?: string;
+}) {
   // Stacks aparecem no bloco próprio — fora dos grupos por zona para não duplicar.
   const stackSet = new Set(result.stacks.missing);
   const nonStack = (list: string[]) => list.filter((k) => !stackSet.has(k));
@@ -41,41 +50,25 @@ export function AtsReport({ result }: { result: AtsResult }) {
   const genRest = nonStack(result.general.missing.slice(0, 12));
   const missingCount =
     result.stacks.missing.length + reqRest.length + difRest.length + genRest.length;
+  const subtitle =
+    jobSubtitle ?? `${result.totalKeywords} termos relevantes • ${result.verdict.label}`;
   return (
     <div className="ats-analyzer__result">
-      <div className={`ats-verdict ats-verdict--${result.verdict.tone}`}>
-        <span className="ats-verdict__score" aria-label={`Compatibilidade de ${result.score} por cento`}>
-          {result.score}%
-        </span>
-        <div className="ats-verdict__body">
-          <span className="ats-verdict__label">{result.verdict.label}</span>
-          <p className="ats-verdict__message">{result.verdict.message}</p>
-          <div
-            className="ats-score-bar"
-            role="progressbar"
-            aria-valuenow={result.score}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Barra de compatibilidade: ${result.score}%`}
-          >
-            <span
-              className={`ats-score-bar__fill ats-score-bar__fill--${result.verdict.tone}`}
-              style={{ width: `${result.score}%` }}
-            />
-          </div>
-        </div>
-      </div>
+      <MatchCard result={result} jobTitle={jobTitle} jobSubtitle={subtitle} />
 
       {missingCount === 0 ? (
         <p className="ats-strong" role="status">
           Nada em falta — seu currículo cobre todos os termos identificados na vaga.
         </p>
       ) : (
-        <>
-          <h3 className="ats-improve-title">O que pode melhorar</h3>
-          <p className="ats-group__legend">
-            Adicione estes termos ao currículo apenas se forem verdade sobre você.
-          </p>
+        <details className="match-details">
+          <summary className="match-details__summary">
+            Ver detalhes por palavra-chave ({missingCount} em falta)
+          </summary>
+          <div className="match-details__body">
+            <p className="ats-group__legend">
+              Adicione estes termos ao currículo apenas se forem verdade sobre você.
+            </p>
           <MissingGroup
             title="Stacks e ferramentas em falta"
             missing={result.stacks.missing}
@@ -100,7 +93,8 @@ export function AtsReport({ result }: { result: AtsResult }) {
             hint="Confira se o seu currículo deixa isso claro."
             tone="info"
           />
-        </>
+          </div>
+        </details>
       )}
       <p className="ats-analyzer__detail">
         {result.totalKeywords} termos relevantes identificados na vaga (benefícios e dados da

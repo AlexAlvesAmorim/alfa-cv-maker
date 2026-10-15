@@ -1,4 +1,5 @@
 import { useRef, type KeyboardEvent } from 'react';
+import { ArrowLeft, CornerDownLeft, SendHorizontal } from 'lucide-react';
 
 interface ChatInputProps {
   value: string;
@@ -46,7 +47,7 @@ export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onC
         aria-label="Voltar etapa anterior"
         title="Voltar etapa"
       >
-        ←
+        <ArrowLeft size={18} />
       </button>
       <textarea
         ref={fieldRef}
@@ -75,10 +76,7 @@ export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onC
         aria-label="Adicionar nova linha"
         title="Nova linha"
       >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M9 10 4 15l5 5" />
-          <path d="M4 15h9a7 7 0 0 1 0 14h-2" />
-        </svg>
+        <CornerDownLeft size={18} aria-hidden="true" />
       </button>
       <button
         className="chat-input__send"
@@ -87,9 +85,7 @@ export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onC
         aria-label="Enviar"
         title="Enviar (Enter)"
       >
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-          <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
-        </svg>
+        <SendHorizontal size={20} aria-hidden="true" />
       </button>
       <span id="chat-input-hint" className="sr-only">
         Enter envia a resposta. Shift mais Enter adiciona uma nova linha.

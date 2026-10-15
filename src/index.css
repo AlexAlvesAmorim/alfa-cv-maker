@@ -22,13 +22,37 @@
   --text-muted: #c29ba1;
   --text-faint: #9d7a80;
 
+  /* Brilho do gradiente de fundo (troca por tema). */
+  --bg-glow: rgba(193, 18, 31, 0.14);
+
+  /* Rótulos sobre fundos de destaque — contraste AA em todos os temas. */
+  --on-bright: #f4ebea;
+  --on-blood: #f4ebea;
+  --on-success: #0a2e0a;
+
+  /* Superfícies compostas e brilhos que acompanham o matiz do tema. */
+  --panel-bg: rgba(30, 9, 14, 0.55);
+  --modal-bg: #120409;
+  --ring-accent: rgba(255, 77, 94, 0.08);
+  --stage-glow: rgba(193, 18, 31, 0.1);
+  --icon-shadow: rgba(193, 18, 31, 0.45);
+  --success-ring: rgba(52, 209, 124, 0.25);
+  --warning-ring: rgba(224, 185, 59, 0.25);
+  --error-ring: rgba(255, 107, 122, 0.25);
+  --stage-dot: rgba(255, 255, 255, 0.055);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-line: rgba(255, 255, 255, 0.09);
+  --stage-1: #150509;
+  --stage-2: #0c0205;
+  --danger-hover: #a3122a;
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 14px;
 
-  /* Identidade: display grotesca p/ títulos, mono de carimbo p/ selos e números.
+  /* Identidade: Space Grotesk p/ títulos, mono de carimbo p/ selos e números.
      Fallback 100% system — sem rede, o app segue idêntico em comportamento. */
-  --font-display: 'Archivo', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
   --font-stamp: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   font-family:
@@ -41,6 +65,155 @@
     sans-serif;
   line-height: 1.55;
   color-scheme: dark;
+}
+
+/* ---------- Temas avançados (seletor no Header) ----------
+   :root acima = Sangue (padrão). Cada bloco troca o mesmo conjunto
+   de tokens — o App.css inteiro reage sem mudar uma linha. */
+
+/* Portal Claro — fundo claro, CTA azul Denim #1250C4,
+   detalhes Razzmatazz #DE0059, cantos generosos de portal amigável. */
+[data-theme='portal'] {
+  color-scheme: light;
+  --bg-900: #dfe7f3;
+  --bg-800: #eaf0f9;
+  --surface: #ffffff;
+  --surface-2: #f2f6fc;
+  --border-red: #c9d6ea;
+  --border-strong: #a9bddd;
+  --red-blood: #0d3fa3;
+  --red-bright: #1250c4;
+  --red-bright-hover: #0e41a8;
+  --red-glow: #de0059;
+  --focus-ring: #1250c4;
+  --hover-accent: #0d3fa3;
+  --error: #c2123f;
+  --error-bg: rgba(194, 18, 63, 0.1);
+  --accent-soft: rgba(18, 80, 196, 0.12);
+  --success: #0e7a3d;
+  --success-soft: rgba(14, 122, 61, 0.12);
+  --warning: #8a5f0e;
+  --warning-soft: rgba(138, 95, 14, 0.14);
+  --text-main: #0a1f44;
+  --text-muted: #4a5f8a;
+  --text-faint: #556d8f;
+  --bg-glow: rgba(18, 80, 196, 0.1);
+  --on-bright: #ffffff;
+  --on-blood: #ffffff;
+  --on-success: #ffffff;
+  --panel-bg: rgba(255, 255, 255, 0.7);
+  --modal-bg: #dbe4f1;
+  --ring-accent: rgba(18, 80, 196, 0.1);
+  --stage-glow: rgba(18, 80, 196, 0.1);
+  --icon-shadow: rgba(18, 80, 196, 0.35);
+  --success-ring: rgba(14, 122, 61, 0.3);
+  --warning-ring: rgba(138, 95, 14, 0.3);
+  --error-ring: rgba(194, 18, 63, 0.28);
+  --stage-dot: rgba(10, 31, 68, 0.1);
+  --glass: rgba(10, 31, 68, 0.05);
+  --glass-line: rgba(10, 31, 68, 0.12);
+  --stage-1: #d3dded;
+  --stage-2: #bcc9e2;
+  --danger-hover: #0a3079;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+
+/* Portal Noturno — o portal depois do expediente: navy profundo, azul
+   vibrante nos CTAs, rosa nos destaques, glow presente. */
+[data-theme='noturno'] {
+  color-scheme: dark;
+  --bg-900: #050b1a;
+  --bg-800: #060d1f;
+  --surface: #0c1830;
+  --surface-2: #12233f;
+  --border-red: #1b2c4e;
+  --border-strong: #274067;
+  --red-blood: #123a8f;
+  --red-bright: #4d8dff;
+  --red-bright-hover: #3b7bf0;
+  --red-glow: #f4588c;
+  --focus-ring: #9dbcff;
+  --hover-accent: #8fb4ff;
+  --error: #ff7d9a;
+  --error-bg: rgba(255, 125, 154, 0.12);
+  --accent-soft: rgba(77, 141, 255, 0.18);
+  --success: #3ddc84;
+  --success-soft: rgba(61, 220, 132, 0.14);
+  --warning: #f0b93e;
+  --warning-soft: rgba(240, 185, 62, 0.14);
+  --text-main: #e8eefc;
+  --text-muted: #9db1d6;
+  --text-faint: #7c90b8;
+  --bg-glow: rgba(77, 141, 255, 0.14);
+  --on-bright: #06122b;
+  --on-blood: #ffffff;
+  --on-success: #05240f;
+  --panel-bg: rgba(6, 13, 31, 0.55);
+  --modal-bg: #040917;
+  --ring-accent: rgba(244, 88, 140, 0.12);
+  --stage-glow: rgba(77, 141, 255, 0.12);
+  --icon-shadow: rgba(77, 141, 255, 0.45);
+  --success-ring: rgba(61, 220, 132, 0.25);
+  --warning-ring: rgba(240, 185, 62, 0.25);
+  --error-ring: rgba(255, 125, 154, 0.25);
+  --stage-dot: rgba(255, 255, 255, 0.055);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-line: rgba(255, 255, 255, 0.09);
+  --stage-1: #0a1428;
+  --stage-2: #04070f;
+  --danger-hover: #0e2f73;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+[data-theme='paper'] {
+  color-scheme: light;
+  --bg-900: #e9e2d8;
+  --bg-800: #f4efe6;
+  --surface: #fffdf8;
+  --surface-2: #ffffff;
+  --border-red: #e3d5c8;
+  --border-strong: #c9b49f;
+  --red-blood: #8a0f1e;
+  --red-bright: #c1121f;
+  --red-bright-hover: #a50e1b;
+  --red-glow: #c1121f;
+  --focus-ring: #c1121f;
+  --hover-accent: #a50e1b;
+  --error: #b3121f;
+  --error-bg: rgba(193, 18, 31, 0.1);
+  --accent-soft: rgba(193, 18, 31, 0.1);
+  --success: #0f7a3d;
+  --success-soft: rgba(15, 122, 61, 0.12);
+  --warning: #9a6b12;
+  --warning-soft: rgba(154, 107, 18, 0.14);
+  --text-main: #241a18;
+  --text-muted: #6f5b55;
+  --text-faint: #85706a;
+  --bg-glow: rgba(193, 18, 31, 0.08);
+  --on-bright: #ffffff;
+  --on-blood: #ffffff;
+  --on-success: #ffffff;
+  --panel-bg: rgba(255, 255, 255, 0.65);
+  --modal-bg: #ece2d3;
+  --ring-accent: rgba(193, 18, 31, 0.08);
+  --stage-glow: rgba(193, 18, 31, 0.08);
+  --icon-shadow: rgba(193, 18, 31, 0.3);
+  --success-ring: rgba(15, 122, 61, 0.28);
+  --warning-ring: rgba(154, 107, 18, 0.3);
+  --error-ring: rgba(179, 18, 31, 0.25);
+  --stage-dot: rgba(36, 26, 24, 0.1);
+  --glass: rgba(36, 26, 24, 0.05);
+  --glass-line: rgba(36, 26, 24, 0.1);
+  --stage-1: #ddd2c2;
+  --stage-2: #c9bda9;
+  --danger-hover: #960f1e;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
 }
 
 * {
@@ -58,7 +231,7 @@ body,
 body {
   background-color: var(--bg-900);
   background-image:
-    radial-gradient(ellipse 100% 45% at 50% -8%, rgba(193, 18, 31, 0.14), transparent),
+    radial-gradient(ellipse 100% 45% at 50% -8%, var(--bg-glow), transparent),
     linear-gradient(var(--bg-800), var(--bg-900));
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
@@ -69,14 +242,49 @@ button {
   cursor: pointer;
 }
 
+/* Lucide: nunca estica dentro de flex e alinha ao texto. */
+svg.lucide {
+  flex: none;
+  vertical-align: -2px;
+}
+
 :focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: var(--red-blood);
-  color: var(--text-main);
+  background: var(--red-bright);
+  color: var(--on-bright);
+}
+
+/* View Transitions (troca chat↔match e etapas): cross-fade curto. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* Transição suave de tema (classe temporária via ThemeProvider).
+   Fora do reduced-motion para não interferir em animações existentes. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theming,
+  html.theming *,
+  html.theming *::before,
+  html.theming *::after {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease,
+      box-shadow 0.3s ease !important;
+  }
 }
 
 input,

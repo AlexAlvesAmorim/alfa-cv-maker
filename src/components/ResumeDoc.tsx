@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import type { ResumeData } from '../types';
 
 interface ResumeDocProps {
@@ -50,11 +51,7 @@ export function ResumeDoc({ resume, finished }: ResumeDocProps) {
           return (
             <li key={item.label} className={`doc-item ${done ? 'doc-item--done' : ''}`}>
               <span className="doc-item__check" aria-hidden="true">
-                {done ? (
-                  <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 6.5 4.8 9 10 3" />
-                  </svg>
-                ) : null}
+                {done ? <Check size={10} strokeWidth={3} /> : null}
               </span>
               {item.label}
             </li>

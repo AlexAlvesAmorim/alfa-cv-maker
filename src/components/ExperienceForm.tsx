@@ -1,4 +1,6 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useAutoAnimate } from '@formkit/auto-animate/react';
+import { X } from 'lucide-react';
 import type { Experience } from '../types';
 
 interface ExperienceFormProps {
@@ -16,6 +18,14 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
   const firstInputRef = useRef<HTMLInputElement>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const [animateList] = useAutoAnimate<HTMLUListElement>();
+  const setListRefs = useCallback(
+    (node: HTMLUListElement | null) => {
+      listRef.current = node;
+      animateList(node);
+    },
+    [animateList],
+  );
 
   const draftIsFilled = draft.role.trim() !== '' || draft.company.trim() !== '';
 
@@ -139,7 +149,13 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
         )}
       </div>
       {list.length > 0 && (
-        <ul ref={listRef} tabIndex={-1} className="exp-form__list" aria-label="Experiências adicionadas" aria-live="polite">
+        <ul
+          ref={setListRefs}
+          tabIndex={-1}
+          className="exp-form__list"
+          aria-label="Experiências adicionadas"
+          aria-live="polite"
+        >
           {list.map((experience, index) => (
             <li key={`${experience.role}-${index}`}>
               <span className="wrap">
@@ -155,7 +171,7 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
                 disabled={disabled}
                 aria-label={`Remover ${experience.role}`}
               >
-                ✕
+                <X size={14} />
               </button>
             </li>
           ))}

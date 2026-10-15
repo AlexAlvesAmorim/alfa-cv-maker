@@ -75,6 +75,46 @@ function bullet(text: string, color = BODY): Paragraph {
   });
 }
 
+interface SkillsTableOptions extends RunOptions {
+  dot?: string;
+  align?: 'left' | 'center' | 'right' | 'both' | 'start' | 'end';
+  /** Largura útil em DXA (padrão: A4 com as margens do baseDocument). */
+  width?: number;
+}
+
+/** Habilidades em N colunas: tabela sem bordas, bem mais compacta que a
+ *  lista corrida quando há muitas skills. Não usar em modelo ATS. */
+function skillsTable(items: string[], cols: number, options: SkillsTableOptions = {}): Table {
+  const { dot = '•', align = 'left', width = 9978, ...runOptions } = options;
+  const columns: string[][] = Array.from({ length: cols }, () => []);
+  items.forEach((item, index) => columns[index % cols].push(item));
+  const colW = Math.floor(width / cols);
+  return new Table({
+    width: { size: width, type: WidthType.DXA },
+    columnWidths: Array.from({ length: cols }, () => colW),
+    borders: NO_BORDER,
+    rows: [
+      new TableRow({
+        children: columns.map(
+          (column) =>
+            new TableCell({
+              width: { size: colW, type: WidthType.DXA },
+              borders: NO_BORDER,
+              children: column.map(
+                (skill) =>
+                  new Paragraph({
+                    alignment: align,
+                    children: [run(dot ? `${dot} ${skill}` : skill, runOptions)],
+                    spacing: { after: 60 },
+                  }),
+              ),
+            }),
+        ),
+      }),
+    ],
+  });
+}
+
 interface HeadingOptions {
   upper?: boolean;
   ruleColor?: string;
@@ -166,7 +206,7 @@ function buildClassicChildren(resume: ResumeData): (Paragraph | Table)[] {
   for (const section of buildSections(resume)) {
     children.push(heading(section.title, INK, { upper: true, ruleColor: '000000', centered: true }));
     if (section.title === 'Habilidades') {
-      children.push(centered(section.items.join('  •  '), { size: 21, color: BODY }));
+      children.push(skillsTable(section.items, 3, { size: 21, color: BODY }));
     } else {
       for (const item of section.items) children.push(bullet(item));
     }
@@ -266,7 +306,7 @@ function buildAtsDevChildren(resume: ResumeData): (Paragraph | Table)[] {
     }
     if (section.title === 'Habilidades') {
       children.push(heading('Habilidades', '000000', { size: 24, ruleColor: '000000', upper: true }));
-      children.push(paragraph([run(section.items.join('  •  '), { color: '282828' })], 140));
+      children.push(skillsTable(section.items, 3, { color: '282828' }));
     }
     if (section.title === 'Idiomas') {
       children.push(heading('Idiomas', '000000', { size: 24, ruleColor: '000000', upper: true }));
@@ -310,7 +350,7 @@ function buildXyzChildren(resume: ResumeData): (Paragraph | Table)[] {
     }
     if (section.title === 'Habilidades') {
       children.push(heading('Habilidades', DARK2, {}));
-      children.push(paragraph([run(section.items.map((item) => `• ${item}`).join('   '), {})]));
+      children.push(skillsTable(section.items, 3, {}));
     }
     if (section.title === 'Idiomas') {
       children.push(heading('Idiomas', DARK2, {}));
@@ -597,7 +637,7 @@ function buildCleanChildren(resume: ResumeData): (Paragraph | Table)[] {
     if (!title) continue;
     children.push(heading(title, accent, { italics: true, font: 'Georgia', size: 30 }));
     if (section.title === 'Habilidades') {
-      children.push(paragraph([run(section.items.join('  •  '), { font: 'Georgia' })], 140));
+      children.push(skillsTable(section.items, 3, { font: 'Georgia' }));
     } else {
       for (const item of section.items) children.push(bullet(item));
     }
@@ -613,7 +653,7 @@ function buildMinimalDoc(resume: ResumeData): Document {
   const sections = buildSections(resume);
   const find = (title: string) => sections.find((section) => section.title === title);
 
-  const leftChildren: Paragraph[] = [];
+  const leftChildren: (Paragraph | Table)[] = [];
   if (resume.photo) leftChildren.push(photoParagraph(resume.photo, 110, 147));
 
   const leftHeading = (title: string) =>
@@ -640,7 +680,17 @@ function buildMinimalDoc(resume: ResumeData): Document {
   const skills = find('Habilidades');
   if (skills) {
     leftHeading('Habilidades');
-    leftLines(skills.items);
+    // Duas colunas na lateral: metade das linhas em ~65mm úteis.
+    leftChildren.push(
+      skillsTable(skills.items, 2, {
+        size: 19,
+        color: MUTED,
+        dot: '',
+        align: 'right',
+        width: 3720,
+      }),
+    );
+    leftChildren.push(new Paragraph({ spacing: { after: 200 }, children: [] }));
   }
   const languages = find('Idiomas');
   if (languages) {

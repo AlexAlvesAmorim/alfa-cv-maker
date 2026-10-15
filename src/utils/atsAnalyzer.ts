@@ -123,6 +123,10 @@ const STOPWORDS = new Set([
   'paced', 'great', 'good', 'best', 'top', 'new', 'big', 'small', 'high', 'low',
   'full', 'part', 'key', 'core', 'main', 'diverse', 'plus', 'life', 'dental', 'gym',
   'office', 'home', 'vision',
+  // EN prosa de anúncio (viravam "requisito" em bigramas tipo "using react")
+  'using', 'used', 'use', 'uses', 'modern', 'solution', 'solutions', 'cutting',
+  'leading', 'delivers', 'delivering', 'delivered', 'provides', 'providing',
+  'year', 'years', 'month', 'months',
 ]);
 
 /* ============ dicionário profissional: stacks, funções, formação ============ */
@@ -251,12 +255,14 @@ function canon(text: string): string {
     .replace(/\bpostgresql\b/g, 'postgres');
 }
 
-const REQUIRED_HEADER = /(^|[\s:])requisit|obrigatori|necessari|imprescindivel|o que esperamos|perfil (desejado|buscado|procurado)|o que voce precisa|voce vai (fazer|atuar|trabalhar)/;
-const DIFFERENTIAL_HEADER = /diferencia|desejavel|\bplus\b|sera um diferencial|pontos? extras?|sera considerado diferencial/;
-const IGNORED_HEADER = /^(beneficios?|vantagens|o que oferecemos|remuneracao|salario|bolsa|horario|jornada|local( de trabalho)?|sobre (a |)(empresa|nos|a vaga)|quem somos|a empresa|nossa empresa|informacoes da empresa|contratacao)\b/;
-const RESET_GENERAL = /^(responsabilidades|atribuicoes|atividades|o que voce (fara|faz)|suas atividades|dia a dia|principais atividades|suas responsabilidades)\b/;
+const REQUIRED_HEADER = /(^|[\s:])requisit|obrigatori|necessari|imprescindivel|o que esperamos|perfil (desejado|buscado|procurado)|o que voce precisa|voce vai (fazer|atuar|trabalhar)|requirements?|must have|must-have|what you bring|what we expect|what we are looking for|qualifications|key skills|you will have|you have /;
+const DIFFERENTIAL_HEADER = /diferencia|desejavel|\bplus\b|sera um diferencial|pontos? extras?|sera considerado diferencial|nice to have|nice-to-have|\bbonus\b|preferred|desirable/;
+// Fragmentos são envoltos em espaços pelo canon — "^ " casa o início do fragmento
+// (e evita disparar no meio de frases como "fale sobre a vaga").
+const IGNORED_HEADER = /^ (beneficios?|vantagens|o que oferecemos|remuneracao|salario|bolsa|horario|jornada|local( de trabalho)?|sobre (a |)(empresa|nos|a vaga)|quem somos|a empresa|nossa empresa|informacoes da empresa|contratacao|benefits?|what we offer|about (us|the company)|who we are|our company|the company|perks|compensation|salary|location|schedule)\b/;
+const RESET_GENERAL = /^ (responsabilidades|atribuicoes|atividades|o que voce (fara|faz)|suas atividades|dia a dia|principais atividades|suas responsabilidades|responsibilities|what you will do|your day|day to day|key responsibilities)\b/;
 /** Frases de benefício/salário/boilerplate: ignoradas onde quer que apareçam. */
-const NOISE_LINE = /vale\s?(refeicao|alimentacao|transporte)|cesta\s*basica|auxilio|convenio|plano\s*(de\s*)?saude|seguro\s*de\s*vida|assistencia\s*(medica|odontologica)|gympass|wellhub|totalpass|day\s*off|aniversari|bolsa\s*(de\s*)?(estudo|educacao|idioma)|desconto|kit\s*(natal|bem|boas)|festa\s*de|brinde|churrasco|happy\s*hour|r\$\s*[\d.]|salario\s*(de\s*)?(r\$|[\d.])|remuneracao|participacao\s*nos\s*lucros|\bplr\b|oferecemos|somos\s|maior\s*fabricante|nossa\s*(empresa|historia|cultura)|sobre\s*nos|quem\s*somos|matriz\s|filial\s|escritorio|fabrica|fundad[ao]|ha\s*\d+\s*anos\s*no\s*mercado|presente\s*em\s*\d+|videocirurgia/;
+const NOISE_LINE = /vale\s?(refeicao|alimentacao|transporte)|cesta\s*basica|auxilio|convenio|plano\s*(de\s*)?saude|seguro\s*de\s*vida|assistencia\s*(medica|odontologica)|gympass|wellhub|totalpass|day\s*off|aniversari|bolsa\s*(de\s*)?(estudo|educacao|idioma)|desconto|kit\s*(natal|bem|boas)|festa\s*de|brinde|churrasco|happy\s*hour|r\$\s*[\d.]|salario\s*(de\s*)?(r\$|[\d.])|remuneracao|participacao\s*nos\s*lucros|\bplr\b|oferecemos|somos\s|maior\s*fabricante|nossa\s*(empresa|historia|cultura)|sobre\s*nos|quem\s*somos|matriz\s|filial\s|escritorio|fabrica|fundad[ao]|ha\s*\d+\s*anos\s*no\s*mercado|presente\s*em\s*\d+|videocirurgia|leading the way|cutting.edge|for over \d+|\bover \d+ years?\b/;
 
 type Zone = 'required' | 'differential' | 'general';
 
@@ -373,11 +379,18 @@ function extractZoneTerms(frags: string[]): Map<string, TermInfo> {
       });
     }
   }
-  // Suprime unigramas cobertos por um bigrama ("sapiens erp" substitui "sapiens"+"erp").
+  // Suprime unigramas só quando o bigrama é um composto sólido do mesmo
+  // vocabulário ("sapiens erp" substitui "sapiens"+"erp"). Prosa incidental
+  // ("senior developer", "backend solutions") mantém as partes — senão o
+  // currículo que tem "developer" seria cobrado pelo bigrama que não casou.
   const covered = new Set<string>();
   for (const key of map.keys()) {
     if (!key.includes(' ')) continue;
-    for (const part of key.split(' ')) covered.add(part);
+    const [a, b] = key.split(' ');
+    const solid = (TECH.has(a) && TECH.has(b)) || (ROLE_EDU.has(a) && ROLE_EDU.has(b));
+    if (!solid) continue;
+    covered.add(a);
+    covered.add(b);
   }
   for (const part of covered) {
     const entry = map.get(part);
@@ -405,13 +418,16 @@ function extractSeniority(raw: string): string[] {
     estagio: 'estágio',
   };
   const c = ` ${canon(raw)} `;
-  const yearRe = /(\d{1,2})\s*\+?\s*(anos?|meses?)(?:\s*de\s*(experiencia|atuacao|vivencia|pratica))?/g;
+  // Anos/meses SÓ contam com qualificador ("3 anos de experiência",
+  // "5 years of experience"). Número solto é quase sempre a idade da empresa
+  // ("for over 15 years", "há 15 anos no mercado") — não um requisito.
+  const yearRe = /(\d{1,2})\s*\+?\s*(anos?|meses?|years?|months?)\s+(de\s+(experiencia|atuacao|vivencia|pratica)|of\s+experience)/g;
   let m: RegExpExecArray | null;
   while ((m = yearRe.exec(c)) !== null) {
     const n = Number(m[1]);
     if (n <= 0 || n > 30) continue;
-    const unit = m[2].startsWith('mes') ? 'meses' : 'anos';
-    push(`${m[1]} ${unit}${m[3] ? ` de ${ACCENT[m[3]] ?? m[3]}` : ''}`);
+    const unit = /^(mes|month)/.test(m[2]) ? 'meses' : 'anos';
+    push(`${m[1]} ${unit} de experiência`);
   }
   const engRe = /\bingles\s*(fluente|avancado|intermediario|basico|tecnico)?/g;
   while ((m = engRe.exec(c)) !== null) {
@@ -530,15 +546,24 @@ export function analyzeForJob(resume: ResumeData, jobDescription: string): AtsRe
   const strongMatches: string[] = [];
   const matchedByZone: Record<Zone, string[]> = { required: [], differential: [], general: [] };
   const missingByZone: Record<Zone, string[]> = { required: [], differential: [], general: [] };
+  const droppedCovered = new Set<string>();
 
   for (const term of active) {
     const weight = ZONE_WEIGHTS[term.zone] * (term.tech ? 1.5 : 1);
-    possible += weight;
     const entry = seen.get(term.key);
     if (!entry) {
+      // Bigrama cuja substância o currículo já cobre ("java developer" com
+      // "java"+"developer" no currículo) não é contra — descarta em vez de
+      // cobrar um termo que a pessoa tem.
+      if (term.key.includes(' ') && term.key.split(' ').some((part) => seen.has(part))) {
+        droppedCovered.add(term.key);
+        continue;
+      }
+      possible += weight;
       missingByZone[term.zone].push(term.display);
       continue;
     }
+    possible += weight;
     earned += weight;
     matchedByZone[entry.zone].push(term.display);
     if (entry.strength === 'forte') strongMatches.push(term.display);
@@ -550,7 +575,10 @@ export function analyzeForJob(resume: ResumeData, jobDescription: string): AtsRe
   const stacksMissing: string[] = [];
   for (const zone of ['required', 'differential', 'general'] as const) {
     for (const term of active) {
-      if (term.zone !== zone || !term.tech || seen.has(term.key) || stackSeen.has(term.key)) continue;
+      if (
+        term.zone !== zone || !term.tech || seen.has(term.key)
+        || droppedCovered.has(term.key) || stackSeen.has(term.key)
+      ) continue;
       stackSeen.add(term.key);
       stacksMissing.push(term.display);
     }
