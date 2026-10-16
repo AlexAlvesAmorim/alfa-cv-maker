@@ -1139,42 +1139,7 @@ function renderMinimal(doc: jsPDF, resume: ResumeData): void {
   }
 }
 
-/* ---------- REFERÊNCIA (padrão do PDF Alex: serif, coluna única, ATS) ---------- */
-
-/* Bullets com rótulo em negrito ("Front-End: React, ..."), como na referência. */
-function drawLabeledBullets(cursor: Cursor, items: string[], x: number, maxWidth: number, textColor: RGB, dotColor: RGB, scale = 1): void {
-  const doc = cursor.doc;
-  const sc = (n: number) => n * scale;
-  const size = sc(10.5);
-  const lineHeight = size * 0.5;
-  const indent = sc(5);
-  for (const item of items) {
-    const colon = item.indexOf(':');
-    const label = colon > 0 && colon < 60 ? item.slice(0, colon + 1) : '';
-    const rest = label ? item.slice(colon + 1).trim() : item;
-    doc.setFont('times', 'normal');
-    doc.setFontSize(size);
-    const lines = doc.splitTextToSize(label ? `${label} ${rest}` : rest, maxWidth - indent) as string[];
-    ensureSpace(cursor, lines.length * lineHeight + sc(2));
-    doc.setTextColor(...dotColor);
-    doc.text('•', x, cursor.y);
-    doc.setTextColor(...textColor);
-    lines.forEach((line, index) => {
-      const ly = cursor.y + index * lineHeight;
-      if (index === 0 && label) {
-        doc.setFont('times', 'bold');
-        doc.text(label, x + indent, ly);
-        doc.setFont('times', 'normal');
-        doc.text(line.slice(label.length + 1), x + indent + doc.getTextWidth(`${label} `), ly);
-      } else {
-        doc.setFont('times', 'normal');
-        doc.text(line, x + indent, ly);
-      }
-    });
-    cursor.y += lines.length * lineHeight + sc(2.4);
-  }
-  cursor.y += sc(3.5);
-}
+/* ---------- REFERÊNCIA (padrão do PDF Alex: serif, ATS) ---------- */
 
 /* Projetos: "Título — stack" + link + bullets, como na referência. */
 function drawProjectBlocks(cursor: Cursor, resume: ResumeData, x: number, maxWidth: number, scale = 1): void {
@@ -1309,7 +1274,7 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
   const skills = find('Habilidades');
   if (skills) {
     refHeading('Competências Técnicas');
-    drawLabeledBullets(cursor, skills.items, marginX, contentW, BODY, BLACK, scale);
+    drawColumns(cursor, skills.items, marginX, contentW, 3, BODY, { font: 'times', size: sc(10.5), dot: '•' });
   }
 
   if (hasJobs(resume)) {

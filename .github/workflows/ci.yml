@@ -31,3 +31,39 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  e2e:
+    name: E2E smoke
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: |
+          python -m pip install playwright
+          python -m playwright install chromium --only-shell
+
+      - name: Build
+        run: npm run build
+
+      - name: Run E2E smoke against the production build
+        run: |
+          (npx vite preview --port 4173 --strictPort > /tmp/preview.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:4173/ && break; sleep 2; done
+          APP_URL=http://localhost:4173 python e2e/e2e_smoke.py

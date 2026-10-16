@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 smoke-out/
+
+# E2E: screenshots de verificação (regeneráveis via e2e/theme_shots.py)
+e2e/shots/

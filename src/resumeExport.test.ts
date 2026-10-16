@@ -26,9 +26,9 @@ describe('habilidades em colunas', () => {
   const SKILLS = ['React', 'TypeScript', 'Git', 'CSS', 'Figma', 'Acessibilidade', 'Trabalho em equipe'];
   // PDF com colunas nativas (drawColumns). Clean usa parágrafo corrido de
   // propósito: colunas ocupariam mais altura e quebrariam o limite de 2 páginas.
-  const PDF_COLUMN_IDS = ['classic', 'ats-dev', 'xyz'];
+  const PDF_COLUMN_IDS = ['classic', 'ats-dev', 'xyz', 'referencia'];
   // DOCX com tabela de colunas (minimal: 2 colunas na lateral).
-  const DOCX_COLUMN_IDS = ['classic', 'ats-dev', 'xyz', 'clean', 'minimal'];
+  const DOCX_COLUMN_IDS = ['classic', 'ats-dev', 'xyz', 'clean', 'minimal', 'referencia'];
 
   it('pdf em colunas nao perde nenhuma skill', () => {
     for (const id of PDF_COLUMN_IDS) {
@@ -66,10 +66,10 @@ describe('habilidades em colunas', () => {
         expect(value, `${id} perdeu "${skill}" no docx`).toContain(skill);
       }
     }
-  });
+  }, 20000);
 
-  it('modelos ATS continuam lineares (sem tabela)', async () => {
-    for (const id of ['ats', 'referencia'] as const) {
+  it('modelo ATS continua linear (sem tabela)', async () => {
+    for (const id of ['ats'] as const) {
       const template = TEMPLATES.find((t) => t.id === id);
       if (!template) throw new Error(`template ${id} ausente`);
       const value = await docxText(template.value);

@@ -751,7 +751,7 @@ function buildMinimalDoc(resume: ResumeData): Document {
   return baseDocument('Calibri', [table], true);
 }
 
-/* ---------- REFERÊNCIA (padrão do PDF Alex: serif, coluna única, ATS) ---------- */
+/* ---------- REFERÊNCIA (padrão do PDF Alex: serif, ATS) ---------- */
 
 function buildReferenciaChildren(resume: ResumeData): (Paragraph | Table)[] {
   const PURPLE = '402C64';
@@ -783,23 +783,7 @@ function buildReferenciaChildren(resume: ResumeData): (Paragraph | Table)[] {
   const skills = sections.find((section) => section.title === 'Habilidades');
   if (skills) {
     out.push(refHeading('Competências Técnicas'));
-    for (const item of skills.items) {
-      const colon = item.indexOf(':');
-      if (colon > 0 && colon < 60) {
-        out.push(
-          new Paragraph({
-            children: [
-              run(item.slice(0, colon + 1), { bold: true, font: SERIF }),
-              run(item.slice(colon + 1), { font: SERIF }),
-            ],
-            bullet: { level: 0 },
-            spacing: { after: 85, line: 276 },
-          }),
-        );
-      } else {
-        out.push(bullet(item));
-      }
-    }
+    out.push(skillsTable(skills.items, 3, { font: SERIF }));
   }
 
   if (resume.experiences.some((job) => job.role.trim() || job.company.trim() || job.achievement.trim())) {

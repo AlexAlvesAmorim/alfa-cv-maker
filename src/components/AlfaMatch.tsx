@@ -37,6 +37,7 @@ function parseExperienceLines(text: string): Experience[] {
 
 export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
   const [jobDescription, setJobDescription] = useState('');
+  const [jobTitleOverride, setJobTitleOverride] = useState('');
   const [fields, setFields] = useState({
     targetRole: resume.targetRole,
     summary: resume.summary,
@@ -191,8 +192,18 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
             placeholder="Cole aqui a descrição da vaga ou o link do anúncio..."
             value={jobDescription}
             onChange={(event) => setJobDescription(event.target.value)}
-            rows={12}
+            rows={10}
           />
+          <label className="alfa-match__field">
+            <span>Título da vaga (opcional — detectamos sozinho)</span>
+            <input
+              className="ats-analyzer__input"
+              placeholder="Ex.: Desenvolvedor React — Estágio"
+              value={jobTitleOverride}
+              onChange={(event) => setJobTitleOverride(event.target.value)}
+              aria-label="Título da vaga"
+            />
+          </label>
           {fetchError && (
             <p className="alfa-match__error" role="alert">
               {fetchError}
@@ -260,7 +271,7 @@ export function AlfaMatch({ resume, onBack, onResumeUpdate }: AlfaMatchProps) {
             result ? (
               <AtsReport
                 result={result}
-                jobTitle={inferJobTitle(jobDescription, fields.targetRole)}
+                jobTitle={jobTitleOverride.trim() || inferJobTitle(jobDescription, fields.targetRole)}
                 jobSubtitle={inferJobSubtitle(jobDescription, result)}
               />
             ) : undefined

@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "python e2e/e2e_smoke.py",
+    "report": "node scripts/build-report.mjs"
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.10.0",
@@ -20,7 +22,8 @@
     "motion": "^14.2.0",
     "pdfjs-dist": "^6.2.108",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "vite-plugin-pwa": "^2.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

@@ -41,6 +41,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
   const [notice, setNotice] = useState<{ text: string; tone: 'error' | 'info' } | null>(null);
   const [emailBusy, setBusy] = useState<'email' | 'letter' | null>(null);
   const [jobDescription, setJobDescription] = useState('');
+  const [jobTitleOverride, setJobTitleOverride] = useState('');
   const [atsResult, setAtsResult] = useState<AtsResult | null>(null);
   const [confirmRestart, setConfirmRestart] = useState(false);
   const [downloaded, setDownloaded] = useState<'pdf' | 'docx' | null>(null);
@@ -508,6 +509,16 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
           rows={4}
           aria-label="Descrição ou link da vaga"
         />
+        <label className="alfa-match__field" style={{ marginBottom: 10 }}>
+          <span>Título da vaga (opcional — detectamos sozinho)</span>
+          <input
+            className="ats-analyzer__input"
+            placeholder="Ex.: Desenvolvedor React — Estágio"
+            value={jobTitleOverride}
+            onChange={(event) => setJobTitleOverride(event.target.value)}
+            aria-label="Título da vaga"
+          />
+        </label>
         {fetchError && (
           <p className="summary-card__warn" role="alert">
             {fetchError} <button type="button" className="chip" style={{marginLeft:8}} onClick={() => void performAnalysis(analysisTarget, importedResume)}>Tentar novamente</button>
@@ -632,7 +643,7 @@ export function SummaryCard({ resume, onRestart, onEditField, onAccentChange, on
                 )}
                 <AtsReport
                   result={atsResult}
-                  jobTitle={inferJobTitle(jobDescription, resume.targetRole)}
+                  jobTitle={jobTitleOverride.trim() || inferJobTitle(jobDescription, resume.targetRole)}
                   jobSubtitle={inferJobSubtitle(jobDescription, atsResult)}
                 />
               </>
