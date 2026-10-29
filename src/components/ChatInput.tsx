@@ -6,28 +6,46 @@ interface ChatInputProps {
   placeholder: string;
   disabled: boolean;
   canGoBack: boolean;
+  isFormStep: boolean;
   onBack: () => void;
   onChange: (value: string) => void;
   onSend: () => void;
 }
 
-export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onChange, onSend }: ChatInputProps) {
+export function ChatInput({ value, placeholder, disabled, canGoBack, isFormStep, onBack, onChange, onSend }: ChatInputProps) {
   const fieldRef = useRef<HTMLTextAreaElement>(null);
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === 'Enter') {
       event.preventDefault();
+      if (event.shiftKey) {
+        // Shift+Enter: nova linha no cursor (não no fim do texto).
+        const el = fieldRef.current;
+        const start = el?.selectionStart ?? value.length;
+        const end = el?.selectionEnd ?? value.length;
+        const next = value.slice(0, start) + '\n' + value.slice(end);
+        onChange(next);
+        requestAnimationFrame(() => {
+          if (!el) return;
+          el.focus();
+          el.selectionStart = el.selectionEnd = start + 1;
+        });
+        return;
+      }
       onSend();
     }
   }
 
   function insertNewline() {
     const el = fieldRef.current;
-    onChange(`${value}\n`);
+    const start = el?.selectionStart ?? value.length;
+    const end = el?.selectionEnd ?? value.length;
+    const next = value.slice(0, start) + '\n' + value.slice(end);
+    onChange(next);
     requestAnimationFrame(() => {
       if (!el) return;
       el.focus();
-      el.selectionStart = el.selectionEnd = el.value.length;
+      el.selectionStart = el.selectionEnd = start + 1;
     });
   }
 
@@ -67,6 +85,7 @@ export function ChatInput({ value, placeholder, disabled, canGoBack, onBack, onC
           el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
         }}
         onKeyDown={handleKeyDown}
+        autoFocus={!disabled && !isFormStep}
       />
       <button
         className="chat-input__newline"

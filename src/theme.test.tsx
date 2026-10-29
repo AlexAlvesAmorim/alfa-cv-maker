@@ -29,14 +29,14 @@ describe('theme engine', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('começa no Sangue quando não há nada salvo', () => {
+  it('começa no Vinho quando não há nada salvo', () => {
     render(
       <ThemeProvider>
         <Probe />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId('current')).toHaveTextContent('blood');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('blood');
+    expect(screen.getByTestId('current')).toHaveTextContent('vinho');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('vinho');
   });
 
   it('lê o tema salvo e ignora valor inválido', () => {
@@ -55,13 +55,14 @@ describe('theme engine', () => {
         <Probe />
       </ThemeProvider>,
     );
-    expect(screen.getByTestId('current')).toHaveTextContent('blood');
+    expect(screen.getByTestId('current')).toHaveTextContent('vinho');
   });
 
-  it('migra valores aposentados (ocean, forest, system)', () => {
+  it('migra valores aposentados (ocean, forest, system, blood)', () => {
     expect(migrateThemeId('ocean')).toBe('noturno');
-    expect(migrateThemeId('forest')).toBe('blood');
-    expect(migrateThemeId('system')).toBe('blood');
+    expect(migrateThemeId('forest')).toBe('vinho');
+    expect(migrateThemeId('system')).toBe('vinho');
+    expect(migrateThemeId('blood')).toBe('vinho');
     expect(migrateThemeId('portal')).toBe('portal');
     expect(migrateThemeId('neon')).toBeNull();
 
@@ -106,6 +107,7 @@ describe('theme engine', () => {
     expect(isThemeId('portal')).toBe(true);
     expect(isThemeId('ocean')).toBe(false);
     expect(isThemeId('neon')).toBe(false);
+    expect(isThemeId('vinho')).toBe(true);
     expect(themeMeta('paper').name).toBe('Papel');
   });
 });
@@ -129,7 +131,7 @@ describe('ThemePicker', () => {
       </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: /tema atual/i }));
-    for (const name of ['Sangue', 'Portal', 'Noturno', 'Papel']) {
+    for (const name of ['Vinho', 'Portal', 'Noturno', 'Papel']) {
       expect(
         screen.getByRole('option', { name: new RegExp(`^${name}`) }),
       ).toBeInTheDocument();

@@ -7,7 +7,7 @@
  * em todos os temas, só ajustam contraste (claro x escuro).
  */
 
-export type ThemeId = 'blood' | 'portal' | 'noturno' | 'paper';
+export type ThemeId = 'vinho' | 'portal' | 'noturno' | 'paper';
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -21,7 +21,7 @@ export interface ThemeMeta {
 }
 
 export const THEMES: ThemeMeta[] = [
-  { id: 'blood', name: 'Sangue', tagline: 'Vermelho escuro original', swatch: ['#0e0407', '#c1121f'], dark: true },
+  { id: 'vinho', name: 'Vinho', tagline: 'Vermelho escuro original', swatch: ['#0e0407', '#c1121f'], dark: true },
   { id: 'portal', name: 'Portal', tagline: 'Claro, CTA azul vibrante', swatch: ['#eaf0f9', '#1250c4'], dark: false },
   { id: 'noturno', name: 'Noturno', tagline: 'Portal navy com rosa neon', swatch: ['#060d1f', '#4d8dff'], dark: true },
   { id: 'paper', name: 'Papel', tagline: 'Quente, papel e tinta', swatch: ['#f4efe6', '#c1121f'], dark: false },
@@ -30,11 +30,12 @@ export const THEMES: ThemeMeta[] = [
 /** Valores aposentados → para onde migra quem tinha salvo. */
 const RETIRED_THEME_MAP: Record<string, ThemeId> = {
   ocean: 'noturno',
-  forest: 'blood',
-  system: 'blood',
+  forest: 'vinho',
+  system: 'vinho',
+  blood: 'vinho',
 };
 
-export const DEFAULT_THEME: ThemeId = 'blood';
+export const DEFAULT_THEME: ThemeId = 'vinho';
 
 export const THEME_STORAGE_KEY = 'alfa-theme';
 

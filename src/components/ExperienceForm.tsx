@@ -140,11 +140,11 @@ export function ExperienceForm({ initial, disabled, onSave }: ExperienceFormProp
         {list.length === 0 && !draftIsFilled && (
           <button
             type="button"
-            className="chip chip--skip"
+            className="chip chip--save"
             onClick={() => onSave([])}
             disabled={disabled}
           >
-            Não tenho experiência formal
+            Não tenho experiência formal — bicos, projetos e voluntariado também contam
           </button>
         )}
       </div>

@@ -13,7 +13,7 @@ import { ThemeContext } from './context';
 function readStoredTheme(): ThemeId {
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    // Migra valores antigos (ocean→noturno, forest/system→blood).
+    // Migra valores antigos (ocean→noturno, forest/system→vinho).
     const migrated = migrateThemeId(stored);
     if (migrated) return migrated;
   } catch {

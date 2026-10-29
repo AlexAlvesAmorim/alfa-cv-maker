@@ -28,7 +28,6 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugText, setDebugText] = useState<string | null>(null);
   const copy = LABELS[variant];
 
   async function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -37,10 +36,8 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
     if (!file || busy) return;
     setBusy(true);
     setError(null);
-    setDebugText(null);
     try {
       const text = await extractTextFromFile(file);
-      setDebugText(text.slice(0, 1500));
       const result = parseResumeText(text);
       if (result.recognized.length === 0) {
         setError('Não consegui reconhecer seções nesse arquivo — tente outro PDF/DOCX ou preencha pelo assistente.');
@@ -84,12 +81,6 @@ export function ImportResume({ variant, onImported }: ImportResumeProps) {
         <p className="import-resume__error" role="alert">
           {error}
         </p>
-      )}
-      {debugText !== null && (
-        <details className="import-debug">
-          <summary>Ver o texto lido do arquivo (diagnóstico)</summary>
-          <pre className="import-debug__text">{debugText}</pre>
-        </details>
       )}
     </div>
   );

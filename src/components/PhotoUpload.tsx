@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from 'react';
 interface PhotoUploadProps {
   disabled: boolean;
   onPhoto: (photo: { photo: string; photoCircle: string }) => void;
+  onSkip: () => void;
 }
 
-type Status = 'idle' | 'working' | 'error';
+type Status = 'idle' | 'working' | 'error' | 'consent';
 
 const SLOW_HINT_SECONDS = 20;
 const VERY_SLOW_HINT_SECONDS = 45;
@@ -14,7 +15,13 @@ function statusText(status: Status, elapsed: number): { main: string; hint: stri
   if (status === 'idle') {
     return {
       main: 'JPG ou PNG até 10MB. A remoção de fundo acontece no seu navegador.',
-      hint: 'Primeiro uso baixa o modelo de IA (~40MB) e pode demorar no 4G — sem internet não funciona, mas dá para pular e adicionar depois.',
+      hint: 'Primeiro uso baixa o modelo de IA (~40MB) e pode demorar no 4G — sem internet não funciona.',
+    };
+  }
+  if (status === 'consent') {
+    return {
+      main: 'O removedor de fundo baixa um modelo de IA (~40 MB) no primeiro uso. Quer continuar?',
+      hint: 'A imagem nunca sai do seu navegador. Pode cancelar e pular — a foto é opcional.',
     };
   }
   if (status === 'error') {
@@ -38,12 +45,12 @@ function statusText(status: Status, elapsed: number): { main: string; hint: stri
   return { main: 'Removendo o fundo...', hint: null };
 }
 
-export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
+export function PhotoUpload({ disabled, onPhoto, onSkip }: PhotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  // Incremented on cancel/unmount so a late-resolving promise is discarded.
   const runRef = useRef(0);
   const [status, setStatus] = useState<Status>('idle');
   const [elapsed, setElapsed] = useState(0);
+  const [awaitingConsent, setAwaitingConsent] = useState(false);
 
   useEffect(() => {
     if (status !== 'working') return;
@@ -59,6 +66,8 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
   function cancel() {
     runRef.current += 1;
     setStatus('idle');
+    setAwaitingConsent(false);
+    setElapsed(0);
   }
 
   async function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -81,18 +90,37 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
       return;
     }
 
+    // First use: ask for consent before downloading the 40MB model
+    if (!awaitingConsent) {
+      setAwaitingConsent(true);
+      setStatus('consent');
+      return;
+    }
+
     const run = ++runRef.current;
     setElapsed(0);
     setStatus('working');
     try {
       const { processPhotoFile } = await import('../utils/photo');
       const result = await processPhotoFile(file);
-      if (runRef.current !== run) return; // canceled or superseded
+      if (runRef.current !== run) return;
       setStatus('idle');
+      setAwaitingConsent(false);
       onPhoto(result);
     } catch {
       if (runRef.current !== run) return;
       setStatus('error');
+    }
+  }
+
+  function handleConsent(accepted: boolean) {
+    if (accepted) {
+      setStatus('working');
+      // Trigger the file input again
+      inputRef.current?.click();
+    } else {
+      setAwaitingConsent(false);
+      setStatus('idle');
     }
   }
 
@@ -105,7 +133,7 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
       <button
         type="button"
         className="photo-upload__btn"
-        disabled={disabled || working}
+        disabled={disabled || working || status === 'consent'}
         onClick={() => inputRef.current?.click()}
         aria-describedby="photo-help"
       >
@@ -116,6 +144,19 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
           Cancelar
         </button>
       )}
+      {status === 'consent' && (
+        <div className="photo-upload__consent" role="alertdialog" aria-label="Consentimento para download do modelo de IA">
+          <p className="photo-upload__consent-text">{main}</p>
+          <div className="photo-upload__consent-actions">
+            <button type="button" className="chip chip--save" onClick={() => handleConsent(true)}>
+              Sim, baixar modelo (~40 MB)
+            </button>
+            <button type="button" className="chip" onClick={() => handleConsent(false)}>
+              Não, pular foto
+            </button>
+          </div>
+        </div>
+      )}
       <span className="photo-upload__status" data-state={status} role="status" aria-live="polite">
         {working && <span className="photo-upload__spinner" aria-hidden="true" />}
         <span>
@@ -123,6 +164,14 @@ export function PhotoUpload({ disabled, onPhoto }: PhotoUploadProps) {
           {hint && <span className="photo-upload__hint">{hint}</span>}
         </span>
       </span>
+      <button
+        type="button"
+        className="chip chip--skip photo-skip photo-skip--full"
+        onClick={onSkip}
+        disabled={disabled || working}
+      >
+        Continuar sem foto — dá para adicionar no painel final
+      </button>
       <span id="photo-help" className="sr-only">Foto 3x4 é o formato de documento 3cm por 4cm. O fundo será removido no seu navegador, sem envio ao servidor.</span>
     </div>
   );

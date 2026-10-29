@@ -14,6 +14,40 @@ export function Header({ step, totalSteps, phase, mode, onModeChange }: HeaderPr
   const progress = Math.round((step / totalSteps) * 100);
   const inChat = mode === 'chat';
 
+  // Compact progress for mobile: just "Etapa X de Y" + visible bar
+  const compactProgress = inChat ? (
+    <div
+      className="header__progress header__progress--compact"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={progress}
+      aria-label={`Etapa ${step} de ${totalSteps}`}
+    >
+      <div className="header__progress-bar">
+        <div className="header__progress-fill" style={{ transform: `scaleX(${progress / 100})` }} />
+      </div>
+      <span className="header__progress-label">Etapa {step} de {totalSteps}</span>
+    </div>
+  ) : null;
+
+  // Full progress for desktop: phase + step/total
+  const fullProgress = inChat ? (
+    <div
+      className="header__progress header__progress--full"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={progress}
+      aria-label={`${phase} — etapa ${step} de ${totalSteps}`}
+    >
+      <div className="header__progress-bar">
+        <div className="header__progress-fill" style={{ transform: `scaleX(${progress / 100})` }} />
+      </div>
+      <span className="header__progress-label">{phase}</span>
+    </div>
+  ) : null;
+
   return (
     <header className="header">
       <div className="header__brand">
@@ -31,21 +65,8 @@ export function Header({ step, totalSteps, phase, mode, onModeChange }: HeaderPr
       </div>
 
       <div className="header__side">
-        {inChat && (
-          <div
-            className="header__progress"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progress}
-            aria-label={`${phase} — etapa ${step} de ${totalSteps}`}
-          >
-            <div className="header__progress-bar">
-              <div className="header__progress-fill" style={{ transform: `scaleX(${progress / 100})` }} />
-            </div>
-            <span className="header__progress-label">{phase} · {step}/{totalSteps}</span>
-          </div>
-        )}
+        {fullProgress}
+        {compactProgress}
         <ThemePicker />
         <button
           type="button"

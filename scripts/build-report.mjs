@@ -204,7 +204,7 @@ function themeTokens() {
   const css = fs.readFileSync(path.join(ROOT, 'src', 'index.css'), 'utf-8');
   const blocks = {};
   const rootMatch = css.match(/:root\s*\{([\s\S]*?)\n\}/);
-  blocks[':root (Sangue)'] = rootMatch ? rootMatch[1] : '';
+  blocks[':root (Vinho)'] = rootMatch ? rootMatch[1] : '';
   for (const m of css.matchAll(/\[data-theme='([^']+)'\]\s*\{([\s\S]*?)\n\}/g)) {
     blocks[m[1]] = m[2];
   }
@@ -389,7 +389,7 @@ table(
 );
 
 chapter('Apêndice B — tokens dos 4 temas');
-p('Todas as variáveis de cor e raio por tema, extraídas do src/index.css. O :root equivale ao Sangue.');
+p('Todas as variáveis de cor e raio por tema, extraídas do src/index.css. O :root equivale ao Vinho.');
 {
   const tokens = themeTokens();
   const names = Object.keys(tokens);
@@ -403,7 +403,7 @@ p('Todas as variáveis de cor e raio por tema, extraídas do src/index.css. O :r
     Object.entries(tokens).map(([theme, vars]) => [theme, Object.fromEntries(vars)]),
   );
   const rows = allVars.map((v) => [v, ...names.map((n) => byName[n][v] ?? '—')]);
-  const nameHeaders = names.map((n) => n.replace(':root (Sangue)', 'Sangue').replace("[data-theme='", '').replace("']", ''));
+  const nameHeaders = names.map((n) => n.replace(':root (Vinho)', 'Vinho').replace("[data-theme='", '').replace("']", ''));
   table(['Variável', ...nameHeaders], rows, {
     size: 7,
     widths: [52, ...names.map(() => (CONTENT_W - 52) / names.length)],

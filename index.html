@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <meta name="description" content="Alfa Curriculum Maker — monte seu currículo conversando com o assistente, grátis e sem cadastro. Exporte em PDF e DOCX e teste o encaixe com a vaga no Alfa Match." />
@@ -34,8 +34,8 @@
       try {
         var t = localStorage.getItem('alfa-theme');
         if (t === 'ocean') t = 'noturno';
-        if (t === 'forest' || t === 'system') t = 'blood';
-        if (t === 'blood' || t === 'portal' || t === 'noturno' || t === 'paper') {
+        if (t === 'forest' || t === 'system' || t === 'blood') t = 'vinho';
+        if (t === 'vinho' || t === 'portal' || t === 'noturno' || t === 'paper') {
           document.documentElement.setAttribute('data-theme', t);
         }
       } catch (e) {}

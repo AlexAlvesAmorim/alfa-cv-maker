@@ -66,7 +66,8 @@ export default function App() {
         pushMessage('bot', stepIndex >= STEPS.length ? FINISH_MESSAGE : STEPS[stepIndex].question);
       }, BOT_DELAY_MS);
     } else {
-      timerRef.current = window.setTimeout(() => pushMessage('bot', STEPS[0].question), BOT_DELAY_MS);
+      // Welcome já vem do useChatBot (semente inicial); aqui a primeira pergunta na hora.
+      pushMessage('bot', STEPS[0].question);
     }
     return () => {
       // StrictMode desmonta/remonta em dev: libera a guarda para a remontagem recomeçar.
@@ -368,12 +369,7 @@ export default function App() {
               />
             )}
             {currentStep?.id === 'photo' && (
-              <>
-                <PhotoUpload disabled={false} onPhoto={submitPhoto} />
-                <button type="button" className="chip chip--skip photo-skip" onClick={skipPhoto}>
-                  Pular foto por agora — dá para adicionar no painel final
-                </button>
-              </>
+              <PhotoUpload disabled={false} onPhoto={submitPhoto} onSkip={skipPhoto} />
             )}
             {currentStep?.id === 'contact' && (
               <ContactForm initial={resume.contact} disabled={isTyping} onSave={submitContact} />
@@ -435,7 +431,7 @@ export default function App() {
                   </div>
                 </div>
                 <footer className="live-preview__footer">
-                  <span>Rascunho automático — sem salvar nada ainda</span>
+                  <span>Salvo só neste navegador; nada vai para servidor</span>
                   <span className="live-preview__page">página 1 de 1</span>
                 </footer>
               </section>
@@ -481,6 +477,7 @@ export default function App() {
               placeholder={currentStep?.placeholder ?? 'Digite aqui...'}
               disabled={inputDisabled || isFormStep}
               canGoBack={stepIndex > 0 && !isTyping}
+              isFormStep={isFormStep}
               onBack={goBack}
               onChange={setDraftText}
               onSend={() => handleSend(draftText)}

@@ -14,9 +14,9 @@ export interface TemplateInfo {
 export const TEMPLATES: TemplateInfo[] = [
   {
     id: 'referencia',
-    value: 'Referência (padrão do PDF Alex)',
+    value: 'Referência (padrão de importação)',
     label: 'Referência',
-    description: 'Coluna única serif, padrão da referência — saída padrão da importação',
+    description: 'Coluna única serif, padrão de saída da importação',
     kind: 'ats',
   },
   {
@@ -35,7 +35,7 @@ export const TEMPLATES: TemplateInfo[] = [
   },
   {
     id: 'ats-dev',
-    value: 'ATS Dev (projetos com stack — inspirado PDF Alex)',
+    value: 'ATS Dev (projetos com stack)',
     label: 'ATS Dev',
     description: 'ATS com projetos + stack inline, 100% texto puro',
     kind: 'ats',

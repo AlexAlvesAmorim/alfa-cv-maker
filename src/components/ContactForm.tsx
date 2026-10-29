@@ -41,11 +41,13 @@ export function ContactForm({ initial, disabled, onSave }: ContactFormProps) {
 
   function update(field: keyof ContactDraft, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));
+    if (!touched) setTouched(true);
   }
 
   function save() {
     setTouched(true);
     if (emailInvalid) return;
+    if (missingCore) return;
     const parts = [draft.phone, draft.email, draft.city, draft.linkedin]
       .map((value) => value.trim())
       .filter(Boolean);
@@ -83,11 +85,11 @@ export function ContactForm({ initial, disabled, onSave }: ContactFormProps) {
             autoComplete="email"
             value={draft.email}
             disabled={disabled}
-            aria-invalid={touched && emailInvalid}
-            aria-describedby={touched && emailInvalid ? `${formId}-email-error` : undefined}
+            aria-invalid={emailInvalid}
+            aria-describedby={emailInvalid ? `${formId}-email-error` : undefined}
             onChange={(event) => update('email', event.target.value)}
           />
-          {touched && emailInvalid && (
+          {emailInvalid && (
             <span className="contact-form__error" id={`${formId}-email-error`} role="alert">
               Confira o e-mail: parece que faltou algo (ex.: nome@dominio.com).
             </span>
@@ -123,7 +125,7 @@ export function ContactForm({ initial, disabled, onSave }: ContactFormProps) {
         </div>
       </div>
       {touched && missingCore && (
-        <span className="contact-form__hint" role="note">
+        <span className="contact-form__hint" role="alert">
           Sem telefone e sem e-mail, o recrutador não consegue te chamar — vale preencher pelo menos um dos dois.
         </span>
       )}
@@ -132,7 +134,7 @@ export function ContactForm({ initial, disabled, onSave }: ContactFormProps) {
           type="button"
           className="chip chip--save"
           onClick={save}
-          disabled={disabled || !anyFilled || emailInvalid}
+          disabled={disabled || !anyFilled || emailInvalid || missingCore}
         >
           Salvar contato e continuar
         </button>

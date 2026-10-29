@@ -3,7 +3,7 @@ import { TEMPLATES } from './templates';
 
 export const WELCOME_MESSAGE =
   'Bem-vindo ao Alfa Curriculum Maker! Eu sou o assistente que vai montar o seu currículo. '
-  + 'São 9 passos rapidinhos (uns 5 minutos), grátis e sem cadastro — e se você já tem um currículo pronto, dá para importar o arquivo em vez de digitar tudo. '
+  + 'São 10 etapas rápidas (uns 5 minutos), a foto é opcional — grátis, sem cadastro, e se você já tem um currículo pronto, dá para importar o arquivo em vez de digitar tudo. '
   + 'No final, você baixa o currículo em PDF ou DOCX no modelo que escolher.';
 
 export const STEPS: ChatStep[] = [
@@ -82,8 +82,9 @@ export const STEPS: ChatStep[] = [
   {
     id: 'photo',
     question:
-      'Quer adicionar uma foto? Eu removo o fundo automaticamente e enquadro no formato 3x4 — foto de documento 3cm×4cm com rosto centralizado.\n\n'
-      + 'Dica: use foto frontal com boa luz. Ela entra na barra lateral do modelo Moderno; nos outros modelos aparece no topo. Totalmente opcional.',
+      'Quer adicionar uma foto 3x4? Eu removo o fundo automaticamente e enquadro no formato de documento.\n\n'
+      + 'Dica: use foto frontal com boa luz. Ela entra na barra lateral do modelo Moderno; nos outros modelos aparece no topo.\n\n'
+      + 'Sem foto também funciona — o currículo fica completo e profissional. Pode pular e adicionar depois no painel final.',
     placeholder: 'Use o botão abaixo ou pule esta etapa...',
     optional: true,
     suggestions: [],
@@ -107,6 +108,6 @@ export const PHASES = [
 export function phaseForStep(stepIndex: number, finished: boolean): string {
   if (finished) return 'Pronto para enviar';
   const phaseIndex = PHASES.findIndex((phase) => (phase.steps as readonly number[]).includes(stepIndex));
-  if (phaseIndex < 0) return `Fase 1 de ${PHASES.length} · Você`;
-  return `Fase ${phaseIndex + 1} de ${PHASES.length} · ${PHASES[phaseIndex].name}`;
+  if (phaseIndex < 0) return `Etapa ${stepIndex + 1} de ${STEPS.length} · Você`;
+  return `Etapa ${stepIndex + 1} de ${STEPS.length} · ${PHASES[phaseIndex].name}`;
 }

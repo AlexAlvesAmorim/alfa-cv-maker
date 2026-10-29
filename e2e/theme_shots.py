@@ -7,7 +7,7 @@ APP_URL = os.environ.get("APP_URL", "http://localhost:5175")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shots")
 os.makedirs(OUT, exist_ok=True)
 
-THEMES = ["blood", "portal", "noturno", "paper"]
+THEMES = ["vinho", "portal", "noturno", "paper"]
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
