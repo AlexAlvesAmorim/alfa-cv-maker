@@ -1305,6 +1305,106 @@ function renderReferencia(doc: jsPDF, resume: ResumeData): void {
   }
 }
 
+/* ---------- EDITORIAL (serif sofisticado) ---------- */
+
+function renderEditorial(doc: jsPDF, resume: ResumeData): void {
+  const accent = accentRgb(resume, TEAL);
+  const serif = 'times';
+  const marginX = 20;
+  const contentW = PAGE_W - marginX * 2;
+  const cursor: Cursor = { doc, y: 26 };
+  const sc = (n: number) => n * densityScale(resume);
+
+  // Header editorial: nome central em serif com regra fina, cargo e contato.
+  drawFieldLines(cursor, resume.fullName || 'Nome não informado', marginX, contentW, {
+    font: serif,
+    style: 'bold',
+    size: sc(24),
+    color: INK,
+    align: 'center',
+    lineGap: sc(2),
+  });
+  doc.setDrawColor(...accent);
+  doc.setLineWidth(0.3);
+  doc.line(marginX, cursor.y, marginX + contentW, cursor.y);
+  cursor.y += sc(6);
+
+  drawFieldLines(cursor, resume.targetRole, marginX, contentW, {
+    font: serif,
+    style: 'bold',
+    size: sc(12),
+    color: INK,
+    align: 'center',
+    lineGap: sc(2),
+  });
+  cursor.y += 2;
+
+  const parts = orderedContactParts(resume.contact);
+  const isSocial = (part: string) => /github\.com|linkedin\.com/i.test(part);
+  const baseLine = parts.filter((part) => !isSocial(part) && !/^https?:\/\//i.test(part)).join('  |  ');
+  const socialLine = parts.filter((part) => isSocial(part)).join('  |  ');
+  const extraLine = parts.filter((part) => !isSocial(part) && /^https?:\/\//i.test(part)).join('  |  ');
+  for (const line of [baseLine, socialLine, extraLine]) {
+    drawFieldLines(cursor, line, marginX, contentW, {
+      font: serif,
+      size: sc(9.5),
+      color: BODY,
+      align: 'center',
+      lineGap: sc(1.6),
+    });
+  }
+  cursor.y += sc(8);
+
+  const sections = buildSections(resume);
+  const find = (title: string) => sections.find((section) => section.title === title);
+
+  const editorialHeading = (title: string) => {
+    drawHeading(cursor, title, marginX, contentW, accent, { font: serif, ruleColor: accent, upper: true, size: sc(12) });
+  };
+
+  if (resume.summary.trim()) {
+    editorialHeading('Resumo');
+    drawParagraph(cursor, resume.summary.trim(), marginX, contentW, BODY, { font: serif, size: sc(11) });
+    cursor.y += sc(2);
+  }
+
+  if (hasJobs(resume)) {
+    editorialHeading('Experiência Profissional');
+    drawExperienceBlocks(
+      cursor,
+      resume,
+      marginX,
+      contentW,
+      { company: INK, period: MUTED, body: BODY, bullet: INK },
+      serif,
+      'italic',
+      densityScale(resume),
+    );
+    cursor.y += 1;
+  }
+
+  if (hasProjects(resume)) {
+    editorialHeading('Projetos em Destaque');
+    drawProjectBlocks(cursor, resume, marginX, contentW, densityScale(resume));
+    cursor.y += 1;
+  }
+
+  const education = find('Formação Acadêmica');
+  const languages = find('Idiomas');
+  const formationItems = [...(education?.items ?? []), ...(languages?.items ?? [])];
+  if (formationItems.length > 0) {
+    editorialHeading('Formação, Certificações e Idiomas');
+    drawBullets(cursor, formationItems, marginX, contentW, BODY, INK, { font: serif, size: sc(10.5) });
+  }
+
+  const skills = find('Habilidades');
+  if (skills) {
+    editorialHeading('Habilidades');
+    drawParagraph(cursor, skills.items.join('  •  '), marginX, contentW, BODY, { font: serif, size: sc(10.5) });
+    cursor.y += 1;
+  }
+}
+
 /* ---------- DISPATCH ---------- */
 
 export function renderResumeDoc(doc: jsPDF, resume: ResumeData): void {
@@ -1336,6 +1436,9 @@ export function renderResumeDoc(doc: jsPDF, resume: ResumeData): void {
       break;
     case 'referencia':
       renderReferencia(doc, data);
+      break;
+    case 'editorial':
+      renderEditorial(doc, data);
       break;
     default:
       renderCanva(doc, data);

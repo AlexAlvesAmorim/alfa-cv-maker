@@ -337,6 +337,24 @@ function Referencia() {
   );
 }
 
+function Editorial() {
+  return (
+    <Page>
+      <R x={40} y={30} w={130} h={16} c="#221416" />
+      <R x={70} y={52} w={70} h={6} c="#221416" />
+      <rect x={40} y={62} width={140} height={1} fill="#B3121F" />
+      <R x={40} y={80} w={104} h={5} c="#6E5F61" />
+      <rect x={40} y={88} width={150} height={1} fill="#D9D9D6" />
+      <R x={40} y={104} w={140} h={5.5} c="#221416" />
+      <rect x={40} y={114} width={128} height={1} fill="#D9D9D6" />
+      <R x={40} y={132} w={120} h={5.5} c="#221416" />
+      <rect x={40} y={142} width={140} height={1} fill="#D9D9D6" />
+      <R x={40} y={160} w={110} h={5.5} c="#221416" />
+      <rect x={40} y={170} width={140} height={1} fill="#D9D9D6" />
+    </Page>
+  );
+}
+
 const THUMBS: Record<string, () => React.JSX.Element> = {
   referencia: Referencia,
   classic: Classic,
@@ -347,6 +365,7 @@ const THUMBS: Record<string, () => React.JSX.Element> = {
   executivo: Executivo,
   clean: Clean,
   minimal: Minimal,
+  editorial: Editorial,
 };
 
 interface TemplateThumbProps {

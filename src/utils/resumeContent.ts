@@ -1,6 +1,6 @@
 import type { Experience, Project, ResumeData } from '../types';
 
-export type TemplateId = 'classic' | 'ats' | 'ats-dev' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal' | 'referencia';
+export type TemplateId = 'classic' | 'ats' | 'ats-dev' | 'xyz' | 'canva' | 'executivo' | 'clean' | 'minimal' | 'editorial' | 'referencia';
 
 export interface ResumeSection {
   title: string;
@@ -117,6 +117,7 @@ export function getTemplateId(layout: string): TemplateId {
   if (value.includes('clean') || value.includes('elegante')) return 'clean';
   if (value.includes('minimal')) return 'minimal';
   if (value.includes('moderno') || value.includes('barra lateral') || value.includes('canva')) return 'canva';
+  if (value.includes('editorial') || value.includes('editoria')) return 'editorial';
   return 'referencia';
 }
 

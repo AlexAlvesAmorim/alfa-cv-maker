@@ -79,6 +79,13 @@ export const TEMPLATES: TemplateInfo[] = [
     kind: 'visual',
     atsNote: 'Visual — duas colunas, não é ATS puro',
   },
+  {
+    id: 'editorial',
+    value: 'Editorial (Serif sofisticado)',
+    label: 'Editorial',
+    description: 'Editoria serif elegante, tipografia de livro, texto puro',
+    kind: 'ats',
+  },
 ];
 
 export function findTemplateByInput(input: string): TemplateInfo | null {

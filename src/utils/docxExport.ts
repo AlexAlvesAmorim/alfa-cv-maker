@@ -819,6 +819,75 @@ function buildReferenciaChildren(resume: ResumeData): (Paragraph | Table)[] {
   return out;
 }
 
+/* ---------- EDITORIAL (serif sofisticado) ---------- */
+
+function buildEditorialDoc(resume: ResumeData): (Paragraph | Table)[] {
+  const SERIF = 'Times New Roman';
+  const scale = densityScale(resume);
+  const sc = (n: number) => Math.round(n * scale);
+  const accent = accentHex(resume, ACCENT);
+  const out: (Paragraph | Table)[] = [
+    centered(resume.fullName || 'Nome não informado', { size: sc(44), bold: true, color: INK, font: SERIF, after: 60 }),
+    centered(resume.targetRole || '', { size: sc(22), bold: true, color: INK, font: SERIF, after: 60 }),
+  ];
+
+  const parts = orderedContactParts(resume.contact);
+  const isSocial = (part: string) => /github\.com|linkedin\.com/i.test(part);
+  const baseLine = parts.filter((part) => !isSocial(part) && !/^https?:\/\//i.test(part)).join('  |  ');
+  const socialLine = parts.filter((part) => isSocial(part)).join('  |  ');
+  const extraLine = parts.filter((part) => !isSocial(part) && /^https?:\/\//i.test(part)).join('  |  ');
+  for (const line of [baseLine, socialLine, extraLine]) {
+    if (line) out.push(centered(line, { size: sc(19), color: BODY, font: SERIF, after: 30 }));
+  }
+
+  const editorialHeading = (title: string) => heading(title, accent, { upper: true, size: sc(27), ruleColor: accent, font: SERIF });
+
+  if (resume.summary.trim()) {
+    out.push(editorialHeading('Resumo'));
+    out.push(paragraph([run(resume.summary.trim(), { font: SERIF })], 160));
+  }
+
+  const sections = buildSections(resume);
+
+  if (resume.experiences.some((job) => job.role.trim() || job.company.trim() || job.achievement.trim())) {
+    out.push(editorialHeading('Experiência Profissional'));
+    for (const job of resume.experiences) {
+      const left = [job.role.trim(), job.company.trim()].filter(Boolean).join(' — ') || 'Experiência';
+      const head: TextRun[] = [run(left, { bold: true, font: SERIF })];
+      if (job.period.trim()) head.push(run(`    ${job.period.trim()}`, { italics: true, font: SERIF }));
+      out.push(paragraph(head, 60));
+      for (const item of splitAchievements(job.achievement)) out.push(bullet(item));
+    }
+  }
+
+  if (resume.projects.some((project) => project.title.trim() || project.bullets.length > 0)) {
+    out.push(editorialHeading('Projetos em Destaque'));
+    for (const project of resume.projects) {
+      const head: TextRun[] = [];
+      if (project.title.trim()) head.push(run(project.title.trim(), { bold: true, font: SERIF }));
+      if (project.stack.trim()) head.push(run(` — ${project.stack.trim()}`, { italics: true, font: SERIF }));
+      if (head.length > 0) out.push(paragraph(head, 60));
+      if (project.link.trim()) out.push(paragraph([run(project.link.trim(), { font: SERIF })], 60));
+      for (const item of project.bullets) out.push(bullet(item));
+    }
+  }
+
+  const education = sections.find((section) => section.title === 'Formação Acadêmica');
+  const languages = sections.find((section) => section.title === 'Idiomas');
+  const formation = [...(education?.items ?? []), ...(languages?.items ?? [])];
+  if (formation.length > 0) {
+    out.push(editorialHeading('Formação, Certificações e Idiomas'));
+    for (const item of formation) out.push(bullet(item));
+  }
+
+  const skills = sections.find((section) => section.title === 'Habilidades');
+  if (skills) {
+    out.push(editorialHeading('Habilidades'));
+    out.push(paragraph([run(skills.items.join('  •  '), { font: SERIF })], 160));
+  }
+  return out;
+}
+
 /* ---------- DISPATCH ---------- */
 
 export async function buildResumeDocx(resume: ResumeData): Promise<Blob> {
@@ -833,6 +902,7 @@ export async function buildResumeDocx(resume: ResumeData): Promise<Blob> {
     clean: baseDocument('Georgia', buildCleanChildren(resume)),
     minimal: buildMinimalDoc(resume),
     referencia: baseDocument('Times New Roman', buildReferenciaChildren(resume)),
+    editorial: baseDocument('Times New Roman', buildEditorialDoc(resume)),
   };
   return Packer.toBlob(docByTemplate[template]);
 }
